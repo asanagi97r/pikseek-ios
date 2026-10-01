@@ -1,0 +1,45 @@
+plugins {
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.compose)
+}
+
+// Material 3 Expressive 界面。与 shared 分开：shared 只放状态与业务，
+// 冒烟测试编译它时不必带上整套 material3 与图标库。
+kotlin {
+    jvm("desktop")
+    jvmToolchain(25)
+
+    sourceSets {
+        all {
+            // BackHandler 在 CMP 里仍标着实验性，返回（Esc）靠它
+            languageSettings.optIn("androidx.compose.ui.ExperimentalComposeUiApi")
+            // 桌面端的 material3 停在 1.12.0-alpha03，其中不少 API 仍标着实验性
+            languageSettings.optIn("androidx.compose.material3.ExperimentalMaterial3Api")
+            languageSettings.optIn("androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
+        }
+        commonMain.dependencies {
+            api(project(":shared"))
+            api(libs.cmp.runtime)
+            api(libs.cmp.foundation)
+            api(libs.cmp.ui)
+            api(libs.cmp.material3)
+            // 桌面端由 Esc 触发返回
+            implementation(libs.cmp.ui.backhandler)
+            implementation(libs.cmp.material3.adaptive.navigation.suite)
+            implementation(libs.cmp.adaptive)
+            // 返回栈的呈现（NavDisplay）与宽窗口的列表加详情两栏
+            implementation(libs.cmp.navigation3.ui)
+            implementation(libs.cmp.adaptive.navigation3)
+            implementation(libs.cmp.material.icons.extended)
+            // 导出日志的文件名与抬头要本地时间
+            implementation(libs.kotlinx.datetime)
+            api(libs.androidx.navigation3.runtime)
+            implementation(libs.androidx.lifecycle.runtime.compose)
+            implementation(libs.coil.compose)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
+        }
+    }
+}

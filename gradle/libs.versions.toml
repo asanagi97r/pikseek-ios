@@ -1,0 +1,134 @@
+[versions]
+agp = "9.3.1"
+kotlin = "2.4.10"
+ksp = "2.3.11"
+
+coreKtx = "1.19.0"
+documentFile = "1.1.0"
+activityCompose = "1.13.0"
+lifecycle = "2.11.0"
+# 用稳定版 BOM，ui 与 foundation 落在 1.12.x。1.13 的 alpha 在列表快速滚动时崩溃：可交互 ListItem
+# 测量时读副文本的基线，为对齐而摆放的子节点去 RectList 查尚未入表的父节点。material3 的
+# 版本不看 BOM，由 cmp-material3 重定向拉到 1.5.0-alpha22，与桌面端同一版 API
+composeBom = "2026.09.00"
+navigation3 = "1.1.5"
+
+datastore = "1.2.1"
+ktor = "3.5.2"
+serialization = "1.11.0"
+coil = "3.6.3"
+kotlinxCoroutines = "1.11.0"
+kotlinxDatetime = "0.7.1"
+# 与 pikpak-kotlin 0.9.0 所依赖的版本一致。SDK 的 downloadTo 以 kotlinx.io.files.Path 为参数，
+# 却只把 kotlinx-io 声明为 runtime 依赖，调用方编译时要自己引入
+kotlinxIo = "0.9.0"
+pikpakSdk = "1.3.0"
+windowsTouch = "0.1.0"
+# 桌面端停在 CMP 1.12，与 Animeko 一致：1.13 的 alpha 带的 skiko 0.152 把各渲染后端包进
+# OnScreenRedrawer，mediamp（0.5.0 仍是）的 mpv D3D11 画面表面要直接拿 Direct3DRedrawer，
+# 一开播放器窗口就抛 IllegalStateException。Android 端的 Compose 版本由 BOM 决定，不受影响。
+# 打包插件单独留在 1.13 的 alpha：release 的 AOT 缓存（buildTypes.release.aot）从这一版才有，
+# 插件只管打包与 DSL，界面库的版本由下面的坐标决定
+composeMultiplatform = "1.12.0"
+composeGradlePlugin = "1.13.0-alpha01"
+# JetBrains 的 material3 单独发版，Android 端重定向到 androidx material3，桌面端是同一份源码的
+# skiko 构建。compose 插件自带的 compose.material3 别名指向更旧的版本，缺 Expressive API
+cmpMaterial3 = "1.12.0-alpha03"
+# 列表与详情并排（ListDetailSceneStrategy，见 PikoMainScaffold）要 adaptive-navigation3，与 adaptive 同版本。
+# rc01 编译于 navigation3-ui 1.1.0、Compose 1.10.0，不依赖 material3，不会顶掉上面钉住的版本
+cmpAdaptive = "1.3.0-rc01"
+cmpNavigation3 = "1.1.2"
+# 图标库停在 1.7.3 不再更新，Android 端经重定向取 BOM 里的版本
+cmpMaterialIcons = "1.7.3"
+mediamp = "0.5.0"
+libmpv = "1.0.0"
+
+junit = "4.13.2"
+# 测试 APK 与应用同进程，AGP 把 androidTest 的传递依赖严格钉到应用运行时类路径的版本。
+# 应用侧 concurrent-futures 是 1.1.0，而 core 1.7.0 / ext-junit 1.3.0 要求 1.2.0，
+# 所以停在仍依赖 1.1.0 的这一组；应用哪天把它抬上去再一起升级。
+androidxTestRunner = "1.6.2"
+androidxTestCore = "1.6.1"
+androidxTestRules = "1.6.1"
+androidxTestExtJunit = "1.2.1"
+mp4parser = "1.1.22"
+zstdJni = "1.5.7-20"
+
+[libraries]
+cmp-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+cmp-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+cmp-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+cmp-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "cmpMaterial3" }
+cmp-material3-adaptive-navigation-suite = { module = "org.jetbrains.compose.material3:material3-adaptive-navigation-suite", version.ref = "cmpMaterial3" }
+cmp-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "cmpAdaptive" }
+cmp-adaptive-navigation3 = { module = "org.jetbrains.compose.material3.adaptive:adaptive-navigation3", version.ref = "cmpAdaptive" }
+cmp-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "cmpNavigation3" }
+cmp-ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "composeMultiplatform" }
+cmp-material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "cmpMaterialIcons" }
+pikpak-kotlin = { module = "io.github.nihildigit:pikpak-kotlin", version.ref = "pikpakSdk" }
+windows-touch = { module = "dev.nihildigit:compose-windows-touch", version.ref = "windowsTouch" }
+mediamp-all = { module = "org.openani.mediamp:mediamp-all", version.ref = "mediamp" }
+libmpv-android = { module = "dev.jdtech.mpv:libmpv", version.ref = "libmpv" }
+mediamp-source-ktxio = { module = "org.openani.mediamp:mediamp-source-ktxio", version.ref = "mediamp" }
+mp4parser-isobox = { module = "com.googlecode.mp4parser:isoparser", version.ref = "mp4parser" }
+
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentFile" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+
+# Compose BOM & Material 3 Expressive (1.5.0-alpha28)
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
+
+# Navigation 3（Google 直接发布桌面构件，两端共用）
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+androidx-adaptive-navigation3 = { module = "androidx.compose.material3.adaptive:adaptive-navigation3" }
+
+# DataStore
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+
+# Ktor
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktor" }
+
+# KotlinX
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinxIo" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
+
+# Coil 3
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
+
+junit = { module = "junit:junit", version.ref = "junit" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
+androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidxTestRules" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestExtJunit" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose = { id = "org.jetbrains.compose", version.ref = "composeGradlePlugin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

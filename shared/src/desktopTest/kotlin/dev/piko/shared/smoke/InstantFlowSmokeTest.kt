@@ -1,0 +1,288 @@
+package dev.piko.shared.smoke
+
+import dev.piko.shared.data.InstantMagnetRepository
+import dev.piko.shared.data.OfflinePackStage
+import dev.piko.shared.data.OfflinePackTracker
+import dev.piko.shared.data.PikoDriveRepository
+import dev.piko.shared.data.PikoPathBreadcrumb
+import dev.piko.shared.data.PreviewTempFolder
+import dev.piko.shared.state.InstantBatchRowStatus
+import dev.piko.shared.state.InstantSaveOutcome
+import dev.piko.shared.state.InstantSaveRecords
+import dev.piko.shared.state.InstantSheetState
+import dev.piko.shared.state.SaveRoute
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+/**
+ * 秒传工作台从解析到落盘的完整流程。两端都只剩布局，这里坏了两端一起坏。
+ */
+class InstantFlowSmokeTest {
+    private val magnet = "magnet:?xt=urn:btih:" + "a".repeat(40)
+    private val season = listOf(
+        Triple("E01.mkv", 700L shl 20, "GCID01"),
+        Triple("E02.mkv", 700L shl 20, "GCID02"),
+        // 体积过了十分之一的门槛，只能靠次要目录名把它排除
+        Triple("sample/sample.mkv", 300L shl 20, "GCID03"),
+        Triple("info.nfo", 2048L, ""),
+    )
+
+    private class Rig(val server: FakePikPakServer, val prefs: MemoryPreferences, backgroundScope: CoroutineScope) {
+        private val provider = server.provider()
+        val instantRepo = InstantMagnetRepository(provider)
+        val driveRepo = PikoDriveRepository(provider, prefs)
+        val tracker = OfflinePackTracker(instantRepo, driveRepo, prefs)
+        val previewFolder = PreviewTempFolder(driveRepo, instantRepo, backgroundScope)
+        val saveRecords = InstantSaveRecords(provider, null, backgroundScope)
+
+        fun sheet(scope: CoroutineScope, magnet: String) =
+            InstantSheetState(instantRepo, driveRepo, prefs, previewFolder, tracker, saveRecords, scope, magnet)
+
+        /** 网盘页停在 [folder] 里，与用户点进去之后的栈相同。 */
+        fun openInDrive(folder: FakePikPakServer.Node) {
+            driveRepo.updateFolderStack(listOf(PikoDriveRepository.ROOT_BREADCRUMB, PikoPathBreadcrumb(folder.id, folder.name)))
+        }
+    }
+
+    /**
+     * 防的是整包离线的后半程断掉：网盘页停着的目录已进回收站仍被当成可用、提交后没人跟踪、
+     * 完成后没删未选的文件、产出文件夹没改成面板里填的名字、跟踪记录没落盘。
+     */
+    @Test
+    fun `a multi-file selection goes offline whole, then is pruned and renamed`() = smoke { scope ->
+        val server = FakePikPakServer()
+        val trashed = server.addFolder("旧目录", trashed = true)
+        server.indexMagnet(magnet, resourceListBody("Show S01", season))
+        val rig = Rig(server, MemoryPreferences(), scope)
+        rig.openInDrive(trashed)
+        scope.launch { rig.tracker.run("smoke@piko.dev") }
+        val state = rig.sheet(scope, magnet)
+        val outcome = scope.async(start = CoroutineStart.UNDISPATCHED) { state.outcomes.first() }
+
+        awaitUntil("解析完成、目标与余量确定") {
+            state.resolution != null && state.target != null && state.remainingBytes != null
+        }
+        val target = state.target!!
+        assertEquals("My Packs", target.name)
+        assertNotNull(state.targetNotice, "目标被替换时要告诉用户")
+        assertEquals(setOf("E01.mkv", "E02.mkv"), state.selectedItems.map { it.file.name }.toSet())
+        assertEquals(SaveRoute.OFFLINE_PACK, state.savePlan?.route)
+
+        state.updateFolderName("Show S01 精选")
+        state.saveSelection()
+        assertIs<InstantSaveOutcome.OfflineTaskCreated>(outcome.await())
+        val task = server.tasksSnapshot().single()
+        assertEquals(target.id, task.parentId)
+        assertEquals(0, server.instantCreates.get(), "整包离线不能先秒传任何文件")
+        assertTrue(task.id in rig.prefs.offlinePacks, "跟踪记录要落盘，重启后才能接着清理")
+        assertEquals(emptyList(), rig.saveRecords.records.value, "离线在传输页里以任务出现，不另记秒传")
+
+        server.completeTask(task.id, "Show S01", season.map { it.first })
+        awaitUntil("清理与改名完成", timeoutMs = 15_000) {
+            rig.tracker.jobs.value.singleOrNull()?.stage == OfflinePackStage.DONE
+        }
+        val output = assertNotNull(server.node(rig.tracker.jobs.value.single().outputId))
+        assertEquals("Show S01 精选", output.name)
+        assertEquals(target.id, output.parentId)
+        assertEquals(setOf("E01.mkv", "E02.mkv"), server.tree(output.id).toSet())
+    }
+
+    /**
+     * 防的是空间不够时仍提交整包：离线要先把整包落进网盘才能删，放不下就会失败在云端。
+     * 退路只秒传选中的、已收录的文件，并保留种子里的子目录，不拍平。
+     */
+    @Test
+    fun `a pack that does not fit is not submitted and the selection can be instant-saved instead`() = smoke { scope ->
+        val server = FakePikPakServer()
+        server.quotaUsage = server.quotaLimit - (1L shl 30)
+        server.indexMagnet(magnet, resourceListBody("Show S01", season))
+        val rig = Rig(server, MemoryPreferences(), scope)
+        scope.launch { rig.tracker.run("smoke@piko.dev") }
+        val state = rig.sheet(scope, magnet)
+        val outcome = scope.async(start = CoroutineStart.UNDISPATCHED) { state.outcomes.first() }
+
+        awaitUntil("解析完成、目标与余量确定") {
+            state.resolution != null && state.target != null && state.remainingBytes != null
+        }
+        state.toggleSelectAll()
+        val plan = assertNotNull(state.savePlan)
+        assertTrue(plan.lacksSpace)
+        assertEquals(false, state.primaryAction?.enabled, "放不下整包时主按钮不可用")
+        val fallback = assertNotNull(plan.fallback)
+        assertEquals(3, fallback.fileCount)
+        assertEquals(1, fallback.skippedCount, "未收录的 nfo 秒传不了")
+
+        state.saveSelectionInstantly()
+        val saved = assertIs<InstantSaveOutcome.InstantSaved>(outcome.await())
+        assertEquals("Show S01", saved.target.name)
+        assertEquals(setOf("E01.mkv", "E02.mkv", "sample/sample.mkv"), server.tree(saved.target.id).toSet())
+        assertEquals(emptyList(), server.tasksSnapshot())
+        // 文件散在新文件夹的子目录里，传输页的记录要定位到文件夹本身
+        val record = rig.saveRecords.records.value.single()
+        assertEquals(saved.target.id, record.locateId)
+        assertEquals(3, record.fileCount)
+    }
+
+    /**
+     * 防的是预览把额度扣两遍：同一集预览两次、预览后再保存，都只该秒传一次。
+     * 也防面板关闭时的清理误删已保存的文件，或漏删 Piko-Temp。
+     */
+    @Test
+    fun `a previewed episode is moved on save and Piko-Temp goes with the session`() = smoke { scope ->
+        val server = FakePikPakServer()
+        server.indexMagnet(magnet, resourceListBody("Show S01", season))
+        val rig = Rig(server, MemoryPreferences(), scope)
+        val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val state = rig.sheet(sessionScope, magnet)
+
+        awaitUntil("解析完成且保存目标确定") { state.resolution != null && state.target != null }
+        val e01 = state.items.indexOfFirst { it.file.name == "E01.mkv" }
+        val e02 = state.items.indexOfFirst { it.file.name == "E02.mkv" }
+        state.setItemSelected(e02, false)
+        assertEquals(SaveRoute.INSTANT, state.savePlan?.route)
+        assertTrue(state.canPreview(e01))
+
+        suspend fun preview(index: Int): String {
+            val request = scope.async(start = CoroutineStart.UNDISPATCHED) { state.previewRequests.first() }
+            state.preview(index)
+            return request.await().fileId
+        }
+        val previewId = preview(e01)
+        val tempFolder = assertNotNull(server.children("").singleOrNull { it.name == PreviewTempFolder.FOLDER_NAME })
+        assertEquals(tempFolder.id, server.node(previewId)?.parentId)
+        assertEquals(previewId, preview(e01))
+        preview(e02)
+        assertEquals(2, server.instantCreates.get())
+
+        val outcome = scope.async(start = CoroutineStart.UNDISPATCHED) { state.outcomes.first() }
+        state.saveSelection()
+        val saved = assertIs<InstantSaveOutcome.InstantSaved>(outcome.await())
+        assertEquals(listOf(previewId), saved.createdIds)
+        assertEquals(state.target?.id, server.node(previewId)?.parentId)
+        assertEquals(2, server.instantCreates.get(), "预览过的文件保存时移动过去，不再秒传")
+        assertEquals(previewId, rig.saveRecords.records.value.single().locateId, "传输页的记录指向保存下来的那一份")
+
+        sessionScope.cancel()
+        awaitUntil("Piko-Temp 被删除") { server.node(tempFolder.id) == null }
+        assertNotNull(server.node(previewId), "已保存的文件不能随 Piko-Temp 一起删掉")
+    }
+
+    /**
+     * 防的是批量保存逐条查空间：两个整包各自放得下、合起来放不下时仍全部提交。
+     * 也防未收录的链接被当成解析失败而挡住保存，以及移除的行照样被提交。
+     */
+    @Test
+    fun `pasted links are checked for space together and saved by their own routes`() = smoke { scope ->
+        val server = FakePikPakServer()
+        // 一季约 1.7 GiB，剩 2 GiB：单个放得下，两个放不下
+        server.quotaUsage = server.quotaLimit - (2L shl 30)
+        val magnetB = "magnet:?xt=urn:btih:" + "b".repeat(40)
+        val unindexed = "magnet:?xt=urn:btih:" + "c".repeat(40)
+        server.indexMagnet(magnet, resourceListBody("Show S01", season))
+        server.indexMagnet(magnetB, resourceListBody("Show S02", season))
+        val rig = Rig(server, MemoryPreferences(), scope)
+        scope.launch { rig.tracker.run("smoke@piko.dev") }
+        val state = rig.sheet(scope, "第一季 $magnet\n第二季 $magnetB\n花絮 ${"c".repeat(40)}")
+        val outcome = scope.async(start = CoroutineStart.UNDISPATCHED) { state.outcomes.first() }
+
+        val batch = assertNotNull(state.batch)
+        assertEquals(3, batch.rows.size)
+        awaitUntil("各行解析完成、目标与余量确定") {
+            batch.rows.none { it.status == InstantBatchRowStatus.RESOLVING } &&
+                state.target != null && batch.remainingBytes != null
+        }
+        assertEquals(
+            listOf(InstantBatchRowStatus.READY, InstantBatchRowStatus.READY, InstantBatchRowStatus.WHOLE_OFFLINE),
+            batch.rows.map { it.status },
+        )
+        assertTrue(batch.lacksSpace)
+        assertTrue(!batch.canSaveAll)
+
+        batch.remove(batch.rows[1])
+        assertTrue(batch.canSaveAll)
+        batch.saveAll()
+        val created = assertIs<InstantSaveOutcome.OfflineTaskCreated>(outcome.await())
+        assertEquals(2, created.submittedCount)
+        assertEquals(setOf(magnet, unindexed), server.tasksSnapshot().map { it.url }.toSet())
+    }
+
+    /**
+     * 防的是解析带着 gcid、云端却没有内容（别人还在上传）时直接报「保存失败」：秒传只建出等上传的占位，
+     * 单文件资源应改交离线任务，占位不能留在目录里，重试时也不该冒出「(1)」的副本。
+     */
+    @Test
+    fun `a single file whose content is not held falls back to offline without leaving a placeholder`() = smoke { scope ->
+        val server = FakePikPakServer()
+        server.indexMagnet(magnet, resourceListBody("The.Citadel.rar", listOf(Triple("The.Citadel.rar", 700L shl 20, "GCIDPENDING"))))
+        server.unheldHashes += "GCIDPENDING"
+        val rig = Rig(server, MemoryPreferences(), scope)
+        val state = rig.sheet(scope, magnet)
+        val outcome = scope.async(start = CoroutineStart.UNDISPATCHED) { state.outcomes.first() }
+
+        awaitUntil("解析完成且保存目标确定") { state.resolution != null && state.target != null }
+        assertEquals(SaveRoute.INSTANT, state.savePlan?.route)
+
+        state.saveSelection()
+        assertIs<InstantSaveOutcome.OfflineTaskCreated>(outcome.await())
+        assertEquals(magnet, server.tasksSnapshot().single().url)
+        assertEquals(emptyList(), server.children(state.target!!.id).map { it.name }, "秒传留下的占位要删掉")
+        assertNull(state.errorMessage, "改走离线成功了，不该再报保存失败")
+    }
+
+    /** 防的是外部分享进来的链接云端没收录时面板卡死：输入框收起、没有可点的出口。 */
+    @Test
+    fun `an unindexed magnet reopens the input and can still be submitted offline`() = smoke { scope ->
+        val server = FakePikPakServer()
+        val rig = Rig(server, MemoryPreferences(), scope)
+        val state = rig.sheet(scope, magnet)
+        val outcome = scope.async(start = CoroutineStart.UNDISPATCHED) { state.outcomes.first() }
+        assertTrue(!state.isInputVisible, "外部唤起时输入框先收起")
+
+        awaitUntil("解析结束并给出说明") { !state.isResolving && state.errorMessage != null && state.target != null }
+        assertTrue(state.isInputVisible)
+        assertNull(state.resolution)
+
+        state.submitOfflineTask()
+        assertIs<InstantSaveOutcome.OfflineTaskCreated>(outcome.await())
+        assertEquals(magnet, server.tasksSnapshot().single().url)
+    }
+
+    /**
+     * 防的是存进用户没在看的目录：默认目标是网盘页的当前目录；面板收起着留在后台时
+     * 用户换了目录，目标跟着换；在面板里另选之后就不再跟。
+     */
+    @Test
+    fun `the save target follows the drive folder until the user picks one`() = smoke { scope ->
+        val server = FakePikPakServer()
+        val shows = server.addFolder("Shows")
+        val movies = server.addFolder("Movies")
+        val rig = Rig(server, MemoryPreferences(), scope)
+        rig.openInDrive(shows)
+        val state = rig.sheet(scope, "")
+
+        awaitUntil("保存目标确定") { state.target != null }
+        assertEquals(shows.id, state.target?.id)
+        assertNull(state.targetNotice)
+
+        rig.openInDrive(movies)
+        awaitUntil("目标跟随网盘页换目录") { state.target?.id == movies.id }
+
+        state.changeTarget(PikoDriveRepository.ROOT_BREADCRUMB)
+        rig.openInDrive(shows)
+        delay(300)
+        assertEquals("", state.target?.id, "另选过之后不再跟随网盘页")
+    }
+}

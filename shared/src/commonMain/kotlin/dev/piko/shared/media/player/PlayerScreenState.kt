@@ -1,0 +1,841 @@
+package dev.piko.shared.media.player
+
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import dev.piko.shared.log.PikoLog
+import dev.piko.shared.log.logFile
+import dev.piko.shared.media.ORIGINAL_QUALITY
+import dev.piko.shared.media.PikoMediaRepository
+import dev.piko.shared.media.PlayableMediaInfo
+import dev.piko.shared.media.PlayableMediaKind
+import dev.piko.shared.media.PreparedPlayback
+import dev.piko.shared.media.bestTranscodeName
+import dev.piko.shared.media.proxy.ProxyStream
+import dev.pikseek.performance.PerformanceMetrics
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
+
+/**
+ * 播放器的取流策略与播放状态，两端共用。
+ *
+ * 取流顺序：本机完整副本 → 本机代理（SDK reader）→ 直链 → 转码流。前三步读的是同一份字节，
+ * 只在「还没出第一帧就失败」时往下走一级；播到一半断掉则原路退避重连，从断点续上。
+ * 续播位置每 5 秒写一次、离开时补一次，放到最后十秒记为 0。
+ *
+ * 控件与画面表面各端自己做，这里只暴露控件需要的纯数据与动作，让控件保持无状态。
+ * 形状与 DriveScreenState 相同：Compose State、派生值走 derivedStateOf、一次性提示走 [messages]。
+ */
+class PlayerScreenState(
+    private val repository: PikoMediaRepository,
+    private val backend: PlaybackBackend,
+    private val scope: CoroutineScope,
+    initialFileId: String,
+    initialFileName: String,
+    initialLocalPath: String? = null,
+    /** 从这里开播，不查续播记录。随机片段里「看完整」从正在看的那一处接着放。 */
+    initialStartMillis: Long? = null,
+    /**
+     * 这个文件在本机的完整副本，没有返回 null。[hint] 是调用方已知的路径，可能已被删除。
+     * 分段下载的片段不算完整副本，由平台自己排除。
+     */
+    private val resolveLocalPath: suspend (fileId: String, hint: String?) -> String? = { _, hint -> hint },
+) {
+    var fileId by mutableStateOf(initialFileId)
+        private set
+    var title by mutableStateOf(initialFileName)
+        private set
+    private var localPathHint: String? = initialLocalPath
+
+    var isLocalPlayback by mutableStateOf(false)
+        private set
+    var mediaInfo by mutableStateOf<PlayableMediaInfo?>(null)
+        private set
+    var isPreparing by mutableStateOf(true)
+        private set
+
+    /**
+     * 这一集已经出了第一帧。时间轴缩略图等它为真才开工：预览不许挡在起播前面。
+     * 换集、换清晰度、重连时回到 false。
+     */
+    var hasFirstFrame by mutableStateOf(false)
+        private set
+
+    /** 退避重连或换源途中。期间不报错，否则每次重连都会闪一次失败卡片。 */
+    var isRecovering by mutableStateOf(false)
+        private set
+    private var failure by mutableStateOf<String?>(null)
+
+    /** 实际在放的变体，null 为原画。与用户所选不同之处在于它包含自动换上的转码流。 */
+    private var activeQuality by mutableStateOf<String?>(null)
+
+    /** 本次从续播位置开始时非 null，5 秒后清掉；控件据此显示「从头播放」提示。 */
+    var resumedFromMillis by mutableStateOf<Long?>(null)
+        private set
+
+    val isImage by derivedStateOf { mediaInfo?.kind == PlayableMediaKind.Image }
+
+    val isPlaying: Boolean get() = backend.isPlaying
+    val positionMillis: Long get() = backend.positionMillis
+    val bufferedPositionMillis: Long get() = backend.bufferedPositionMillis
+    val aspectRatio: PlayerAspectRatio? get() = backend.aspectRatio
+
+    val isLoading by derivedStateOf { isPreparing || isRecovering || (!isImage && backend.isBuffering) }
+
+    /**
+     * 主播放器正需要带宽：起播前、重连中、缓冲中、拖动后画面还没走起来。
+     * 缩略图引擎在这期间让路，不发起新的读取。
+     */
+    val needsBandwidth by derivedStateOf { isPreparing || isRecovering || backend.isBuffering || seeking }
+
+    val durationMillis by derivedStateOf {
+        backend.durationMillis.takeIf { it > 0L } ?: ((mediaInfo?.durationSeconds ?: 0L) * 1000L)
+    }
+
+    /** 后端不能调速时为 null，控件据此隐藏倍速入口。 */
+    val playbackSpeed by derivedStateOf { if (backend.supportsSpeed) backend.speed else null }
+
+    val qualityOptions by derivedStateOf {
+        val info = mediaInfo
+        if (isLocalPlayback || info == null || info.kind != PlayableMediaKind.Video) {
+            emptyList()
+        } else {
+            val variants = info.availableVariants
+                .map { it.mediaName.ifBlank { it.resolutionName } }
+                .filter { it.isNotBlank() }
+            if (variants.isEmpty()) emptyList() else (listOf(ORIGINAL_QUALITY) + variants).distinct()
+        }
+    }
+
+    val currentQuality by derivedStateOf {
+        if (qualityOptions.isEmpty()) null else activeQuality ?: ORIGINAL_QUALITY
+    }
+
+    val errorMessage by derivedStateOf { if (isRecovering) null else failure }
+
+    /** 横向画面。优先信后端解出的画面参数（已计入旋转），其次信服务端元数据。 */
+    val isLandscapeVideo by derivedStateOf {
+        backend.videoAspect?.let { it > 1f } ?: mediaInfo?.isLandscapeVideo
+    }
+
+    /**
+     * 同目录的视频，按自然顺序，由调用方取来填入。只有一项或为空时控件不给选集入口。
+     * 取不到时也要填一次空列表：打开第一个文件前会等它，好带上外挂字幕。
+     */
+    var playlist: List<PlaylistEntry>
+        get() = playlistState
+        set(value) {
+            playlistState = value
+            isPlaylistLoaded = true
+        }
+    private var playlistState by mutableStateOf<List<PlaylistEntry>>(emptyList())
+    private var isPlaylistLoaded by mutableStateOf(false)
+
+    // 只在第一次打开时等播放列表；等过一次仍没有，之后的换集、重试都不再等
+    private var waitedForPlaylist = false
+
+    val audioTracks: List<MediaTrack> get() = backend.audioTracks
+    val subtitleTracks: List<MediaTrack> get() = backend.subtitleTracks
+    val selectedAudioTrackId: String? get() = backend.selectedAudioTrackId
+    val selectedSubtitleTrackId: String? get() = backend.selectedSubtitleTrackId
+
+    // 用户选过的轨道，跨集沿用。编号在文件之间不稳定，存的是整条轨道，换集后按标题与语言找对应的
+    private var preferredAudio: MediaTrack? = null
+    private var preferredSubtitle: MediaTrack? = null
+    private var prefersSubtitlesOff = false
+
+    // 这个文件里用户是否亲手换过轨道。换过就不再按上一集的偏好改回去
+    private var tracksChosenThisFile = false
+
+    private var subtitleStreams: List<AutoCloseable> = emptyList()
+
+    // 用户手动挂上的字幕，只属于当前文件。换清晰度、重连、换到本地副本都要重开文件，每次 open 时一并带上
+    private var manualSubtitles: List<ManualSubtitle> = emptyList()
+
+    // 刚手动挂上、还没出现在轨道列表里的那条，出现后按用户亲手选择记下，见 init
+    private var pendingManualTitle: String? = null
+
+    /** 能手动挂外挂字幕。 */
+    val canAddSubtitle: Boolean get() = backend.canAddSubtitle
+
+    /**
+     * 用户叠加的画面旋转，顺时针度数。整个播放器会话沿用，换集不归零：要转的多是手机竖拍或录屏的片子，
+     * 同一目录里的几段通常出自同一台设备，一集一集重新转反而麻烦。mpv 的 video-rotate 本就跨 loadfile 保留，
+     * 这里只是记住给控件显示。
+     */
+    var rotationDegrees by mutableIntStateOf(0)
+        private set
+    val supportsRotation: Boolean get() = backend.supportsRotation
+
+    val currentEntry by derivedStateOf { playlist.find { it.fileId == fileId } }
+
+    // 上一集、下一集与自动连播都只在当前分区里走：正片放完不该跳进 PV 或菜单。
+    // 同一内容的几个版本算一集，按组走
+    private val sectionGroups by derivedStateOf {
+        val key = currentEntry?.sectionKey ?: return@derivedStateOf emptyList()
+        playlist.filter { it.sectionKey == key }.groupBy { it.groupKey }.values.toList()
+    }
+    private val groupIndex by derivedStateOf { sectionGroups.indexOfFirst { group -> group.any { it.fileId == fileId } } }
+    val previousEntry by derivedStateOf { sectionGroups.getOrNull(groupIndex - 1)?.takeIf { groupIndex > 0 }?.let(::preferredIn) }
+    val nextEntry by derivedStateOf { sectionGroups.getOrNull(groupIndex + 1)?.takeIf { groupIndex >= 0 }?.let(::preferredIn) }
+
+    private fun preferredIn(group: List<PlaylistEntry>): PlaylistEntry = preferredVersion(group, currentEntry?.versionLabel)
+
+    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    val messages: SharedFlow<String> = _messages.asSharedFlow()
+
+    private var prepared: PreparedPlayback? = null
+
+    // 拖动之后、画面重新走起来之前，至多 SEEK_WATCH_MS，见 watchSeek。init 里就要读，声明在它前面
+    private var seeking by mutableStateOf(false)
+    private var prepareJob: Job? = null
+    private var recoveryJob: Job? = null
+    private var resumeTipJob: Job? = null
+
+    private var requestedQuality: String? = null
+    private var pendingStartMillis: Long? = initialStartMillis
+
+    /** 本轮 open 用的起点，还没出第一帧就换源时从这里重来。 */
+    private var attemptStartMillis = 0L
+    private var usingProxy = false
+    private var preferDirectLink = false
+    private var directLinkTried = false
+    private var stableJob: Job? = null
+    private var startedThisAttempt = false
+    private var retryAttempt = 0
+
+    // 出错瞬间后端的位置可能已经归零，重连与持久化都用这个
+    private var lastKnownPositionMillis = 0L
+    private var released = false
+
+    /** 续播记录的键。从下载页进来的本地文件可能没有 fileId，只能退回路径。 */
+    private val positionKey: String get() = fileId.ifBlank { localPathHint.orEmpty() }
+
+    init {
+        scope.launch { backend.events.collect(::onBackendEvent) }
+        scope.launch {
+            snapshotFlow { backend.positionMillis }.collect { position ->
+                // 新文件出第一帧前，后端报的可能还是上一个文件的位置
+                if (startedThisAttempt && position > 0L) lastKnownPositionMillis = position
+            }
+        }
+        scope.launch { persistLoop() }
+        scope.launch {
+            // 有人在等时读得最急，见 PikPakStreamReader.urgent：开播前、拖动后、卡顿时。平时播放器往后缓冲的读
+            // 排在它们之后，拖动那一下不必与自己的缓冲读排队。拖动单独记：桌面端后端拖动时不报缓冲，
+            // 只看缓冲的话开关从没打开过，那几次拖动都在与缓冲读排队（2026-09-28，一次等了 6.7 秒）
+            snapshotFlow { isPreparing || backend.isBuffering || seeking }.collect { waiting -> prepared?.urgent = waiting }
+        }
+        scope.launch {
+            // 外挂字幕在文件加载之后才挂上，列表会分几次变长，每次都重新套用
+            snapshotFlow { backend.audioTracks to backend.subtitleTracks }.collect {
+                selectPendingManualSubtitle()
+                applyTrackPreferences()
+            }
+        }
+        reload()
+    }
+
+    fun selectAudioTrack(track: MediaTrack) {
+        preferredAudio = track
+        tracksChosenThisFile = true
+        backend.selectAudioTrack(track.id)
+    }
+
+    /** [track] 为 null 时关闭字幕。 */
+    fun selectSubtitleTrack(track: MediaTrack?) {
+        preferredSubtitle = track
+        prefersSubtitlesOff = track == null
+        tracksChosenThisFile = true
+        backend.selectSubtitleTrack(track?.id)
+    }
+
+    /**
+     * 本机的字幕文件。[path] 要是后端能直接读的路径，Android 的 content: URI 由平台先复制出来。
+     * [forFileId] 是弹出选择框时正在放的视频：选文件与复制期间可能已自动连播到下一集，
+     * 字幕只属于选它时的那一集，换过就不挂。
+     */
+    fun addLocalSubtitle(forFileId: String, path: String, name: String) {
+        if (fileId != forFileId || released) {
+            _messages.tryEmit("视频已切换，字幕未挂上")
+            return
+        }
+        val subtitle = ManualSubtitle(title = name, localPath = path, fileId = null)
+        manualSubtitles = manualSubtitles + subtitle
+        attachManualSubtitle(ExternalSubtitle(url = path, title = name, language = null))
+    }
+
+    /** 网盘上的字幕文件，与自动挂的外挂字幕一样经本机代理读。 */
+    fun addDriveSubtitle(subtitleFileId: String, name: String) {
+        val videoFileId = fileId
+        scope.launch {
+            val stream = repository.prepareSubtitle(subtitleFileId)
+            if (stream == null) {
+                _messages.tryEmit("无法打开字幕文件")
+                return@launch
+            }
+            // 取流期间换了集，这条字幕不属于新文件
+            if (fileId != videoFileId || released) {
+                stream.close()
+                return@launch
+            }
+            subtitleStreams = subtitleStreams + stream
+            manualSubtitles = manualSubtitles + ManualSubtitle(title = name, localPath = null, fileId = subtitleFileId)
+            attachManualSubtitle(ExternalSubtitle(url = stream.url, title = name, language = null))
+        }
+    }
+
+    private fun attachManualSubtitle(subtitle: ExternalSubtitle) {
+        // 日志只留扩展名，文件名不进导出的日志
+        PikoLog.i(TAG, "手动挂字幕，格式 ${subtitle.title.substringAfterLast('.', "未知")}，${logFile(fileId, title)}")
+        pendingManualTitle = subtitle.title
+        backend.addSubtitle(subtitle)
+    }
+
+    /**
+     * 后端挂上时已经选中，这里只把它记成用户的选择：之后重开文件（换清晰度、重连）时按标题找回它，
+     * 而不是被上一集的偏好或自动选择换掉。
+     */
+    private fun selectPendingManualSubtitle() {
+        val title = pendingManualTitle ?: return
+        val track = backend.subtitleTracks.lastOrNull { it.isExternal && it.title == title } ?: return
+        pendingManualTitle = null
+        selectSubtitleTrack(track)
+    }
+
+    fun setRotation(degrees: Int) {
+        val normalized = degrees.mod(360) / 90 * 90
+        rotationDegrees = normalized
+        backend.setRotation(normalized)
+    }
+
+    private fun applyTrackPreferences() {
+        if (tracksChosenThisFile) return
+        preferredAudio?.let { preferred ->
+            matchTrack(backend.audioTracks, preferred)?.takeIf { it.id != backend.selectedAudioTrackId }
+                ?.let { backend.selectAudioTrack(it.id) }
+        }
+        when {
+            prefersSubtitlesOff -> if (backend.selectedSubtitleTrackId != null && backend.subtitleTracks.isNotEmpty()) {
+                backend.selectSubtitleTrack(null)
+            }
+            else -> preferredSubtitle?.let { preferred ->
+                matchTrack(backend.subtitleTracks, preferred)?.takeIf { it.id != backend.selectedSubtitleTrackId }
+                    ?.let { backend.selectSubtitleTrack(it.id) }
+            }
+        }
+    }
+
+    fun togglePlayPause() {
+        if (backend.isPlaying) backend.pause() else backend.play()
+    }
+
+    fun play() = backend.play()
+
+    fun pause() = backend.pause()
+
+    fun seekTo(positionMillis: Long) {
+        val upper = durationMillis.takeIf { it > 0L } ?: Long.MAX_VALUE
+        backend.seekTo(positionMillis.coerceIn(0L, upper))
+        watchSeek()
+    }
+
+    private var seekWatch: Job? = null
+
+    /**
+     * 记下拖动后多久画面重新走起来，与信息流的「定位后画面走起来」对照。连着拖（按住方向键）只记最后一次；
+     * 暂停着拖的等不到走起来，不记。
+     */
+    private fun watchSeek() {
+        seekWatch?.cancel()
+        val sought = TimeSource.Monotonic.markNow()
+        seeking = true
+        seekWatch = scope.launch {
+            // 等的期间后端报没报缓冲：报了是在等网络，没报是慢在解码（精确定位要从前一个关键帧解到目标）
+            var sawBuffering = backend.isBuffering
+            val bufferingWatch = launch { snapshotFlow { backend.isBuffering }.first { it }; sawBuffering = true }
+            // 刚定位时报的位置可能还是定位前的
+            delay(SEEK_SETTLE_MS)
+            val from = backend.positionMillis
+            val resumed = withTimeoutOrNull(SEEK_WATCH_MS) {
+                snapshotFlow { backend.isPlaying && backend.positionMillis >= from + SEEK_EVIDENCE_MS }.first { it }
+            } != null
+            bufferingWatch.cancel()
+            seeking = false
+            if (resumed) {
+                val latency = sought.elapsedNow().inWholeMilliseconds - SEEK_EVIDENCE_MS
+                PerformanceMetrics.update { it.copy(seekMillis = latency) }
+                PerformanceMetrics.sample("seek", latency, if (sawBuffering) "buffered" else "")
+                PikoLog.d(
+                    TAG,
+                    "拖动后画面走起来 ${sought.elapsedNow().inWholeMilliseconds - SEEK_EVIDENCE_MS} ms，${if (sawBuffering) "等过缓冲" else "没报缓冲"}",
+                )
+            }
+        }
+    }
+
+    fun seekBy(deltaMillis: Long) = seekTo(backend.positionMillis + deltaMillis)
+
+    fun setSpeed(speed: Float) = backend.setSpeed(speed)
+
+    fun setAspectRatio(mode: PlayerAspectRatio) = backend.setAspectRatio(mode)
+
+    fun selectQuality(quality: String) {
+        pendingStartMillis = currentPosition()
+        requestedQuality = quality
+        // 切清晰度是用户动作，不是故障：退避次数与换源进度都给新流重新算
+        resetRecovery()
+        reload()
+    }
+
+    fun retry() {
+        pendingStartMillis = currentPosition()
+        resetRecovery()
+        reload()
+    }
+
+    fun restartFromBeginning() {
+        backend.seekTo(0L)
+        resumedFromMillis = null
+    }
+
+    fun dismissResumeTip() {
+        resumedFromMillis = null
+    }
+
+    /** 同目录换片。清晰度、续播与重试状态都跟着新文件重来。 */
+    fun switchTo(fileId: String, fileName: String, localPath: String? = null) {
+        if (fileId == this.fileId && localPath == localPathHint) return
+        val previousKey = positionKey
+        val previousPosition = lastKnownPositionMillis
+        val previousDuration = durationMillis
+        scope.launch { persist(previousKey, previousPosition, previousDuration) }
+        // 上一集最后不足一个上报间隔的进度，换片后就报不出去了，这里补一次
+        if (startedThisAttempt && !isImage) {
+            val previousFileId = this.fileId
+            scope.launch { runCatchingNonCancel { repository.reportPlay(previousFileId, previousPosition, previousDuration) } }
+        }
+
+        switchStarted = TimeSource.Monotonic.markNow()
+        this.fileId = fileId
+        title = fileName
+        localPathHint = localPath
+        mediaInfo = null
+        activeQuality = null
+        requestedQuality = null
+        pendingStartMillis = null
+        lastKnownPositionMillis = 0L
+        manualSubtitles = emptyList()
+        pendingManualTitle = null
+        resetRecovery()
+        reload()
+    }
+
+    /** 点到正在放的那集只收起面板：它若是本地副本，按 fileId 重开会丢掉本地路径的提示并从头取流。 */
+    fun playEntry(entry: PlaylistEntry) {
+        if (entry.fileId != fileId) switchTo(entry.fileId, entry.name)
+    }
+
+    fun playPrevious() {
+        previousEntry?.let(::playEntry)
+    }
+
+    fun playNext() {
+        nextEntry?.let(::playEntry)
+    }
+
+    /** 播放途中才发现本机有完整副本（如下载刚完成），从当前位置换到本地文件。 */
+    fun useLocalCopy(path: String) {
+        if (isLocalPlayback) return
+        localPathHint = path
+        pendingStartMillis = currentPosition()
+        resetRecovery()
+        reload()
+    }
+
+    /** 释放代理会话。后端由创建它的一方释放，续播位置由作用域取消时补写。 */
+    fun release() {
+        released = true
+        prepareJob?.cancel()
+        recoveryJob?.cancel()
+        closePrepared()
+    }
+
+    private fun currentPosition(): Long =
+        backend.positionMillis.takeIf { it > 0L && startedThisAttempt } ?: lastKnownPositionMillis
+
+    private fun resetRecovery() {
+        recoveryJob?.cancel()
+        stableJob?.cancel()
+        retryAttempt = 0
+        preferDirectLink = false
+        directLinkTried = false
+        isRecovering = false
+    }
+
+    private fun reload() {
+        prepareJob?.cancel()
+        prepareJob = scope.launch { prepare() }
+    }
+
+    // 这一轮打开的起点，各段耗时都从这里算起
+    private var openStarted = TimeSource.Monotonic.markNow()
+
+    // 换集的那一刻，到新的一集出第一帧为止；不是换集引起的打开时为 null
+    private var switchStarted: TimeMark? = null
+    private var prefetchJob: Job? = null
+
+    /** 是否在播着的时候提前备好下一条的描述。由平台按设置给出。 */
+    var prefetchNext: Boolean = true
+
+    private suspend fun prepare() {
+        isPreparing = true
+        failure = null
+        startedThisAttempt = false
+        hasFirstFrame = false
+        prefetchJob?.cancel()
+        openStarted = TimeSource.Monotonic.markNow()
+        PerformanceMetrics.resetForNewMedia()
+        resumeTipJob?.cancel()
+        resumedFromMillis = null
+        backend.stop()
+        closePrepared()
+        try {
+            val pending = pendingStartMillis
+            pendingStartMillis = null
+            // 同步开着时优先用 PikPak 播放历史里的位置：它含其他客户端看到的进度。查它要一次请求，
+            // 与取流并行，到开播前才取结果，等不到就退回本机记录
+            val cloudPosition = if (pending == null) scope.async { repository.cloudPlaybackPosition(fileId) } else null
+            var saved: Long? = null
+            suspend fun startPosition(): Long {
+                if (pending != null) return pending.also { attemptStartMillis = it }
+                val cloud = withTimeoutOrNull(CLOUD_RESUME_WAIT_MILLIS) { cloudPosition?.await() }
+                saved = (cloud ?: repository.getPlaybackPosition(positionKey)).takeIf { it > RESUME_THRESHOLD_MILLIS }
+                return (saved ?: 0L).also { attemptStartMillis = it }
+            }
+
+            tracksChosenThisFile = false
+            val localPath = resolveLocalPath(fileId, localPathHint)
+            if (localPath != null) {
+                isLocalPlayback = true
+                usingProxy = false
+                activeQuality = null
+                PikoLog.i(TAG, "打开本地副本：${logFile(fileId, title)}")
+                backend.open(PlaybackTarget.LocalFile(localPath), startPosition(), subtitles = openSubtitles())
+            } else {
+                isLocalPlayback = false
+                val playback = repository.preparePlayback(fileId, requestedQuality).getOrThrow()
+                // 出第一帧前就有人在等；之后由 init 里按缓冲状态接管
+                playback.urgent = true
+                prepared = playback
+                mediaInfo = playback.info
+                activeQuality = requestedQuality?.takeUnless { it == ORIGINAL_QUALITY }
+                when (playback.info.kind) {
+                    PlayableMediaKind.Image -> Unit
+                    PlayableMediaKind.UnsupportedImage -> failure = "GIF 暂不支持预览"
+                    PlayableMediaKind.Video -> {
+                        val proxyUrl = playback.proxyUrl.takeUnless { preferDirectLink }
+                        usingProxy = proxyUrl != null
+                        val info = playback.info
+                        PikoLog.i(
+                            TAG,
+                            "打开：${logFile(fileId, title)}，${if (usingProxy) "经代理" else "直链"}，${if (info.isOrigin) "原画" else info.currentResolution + "p 转码"}，" +
+                                "${info.width}x${info.height}，${info.sizeBytes} B",
+                        )
+                        // 直链交给播放器直接读时，记下它的主机；经本机代理时出网的是 SDK 的连接，另有记录
+                        if (proxyUrl == null) dev.pikseek.security.NetworkAudit.recordUrl(playback.info.currentUrl, "CDN：播放器直接读直链")
+                        val start = startPosition()
+                        val subtitles = openSubtitles()
+                        val loadMillis = openStarted.elapsedNow().inWholeMilliseconds
+                        PerformanceMetrics.update { it.copy(mpvLoadMillis = loadMillis) }
+                        PerformanceMetrics.sample("mpv_load", loadMillis)
+                        backend.open(PlaybackTarget.Url(proxyUrl ?: playback.info.currentUrl), start, subtitles = subtitles)
+                    }
+                }
+            }
+            cloudPosition?.cancel()
+            saved?.let { if (!isImage) showResumeTip(it) }
+            isPreparing = false
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            PikoLog.w(TAG, "取流失败：${logFile(fileId, title)}", e)
+            failure = e.message ?: "无法打开媒体"
+            isPreparing = false
+            // 这一轮连流都没拿到，退避到此为止，否则失败卡片会被加载态一直挡着
+            isRecovering = false
+        }
+    }
+
+    private fun onBackendEvent(event: PlaybackBackendEvent) {
+        if (released) return
+        when (event) {
+            PlaybackBackendEvent.Ready -> {
+                if (!startedThisAttempt) {
+                    PikoLog.d(TAG, "首帧就绪")
+                    val firstFrame = openStarted.elapsedNow().inWholeMilliseconds
+                    val switched = switchStarted?.elapsedNow()?.inWholeMilliseconds
+                    switchStarted = null
+                    PerformanceMetrics.update { it.copy(firstFrameMillis = firstFrame, switchMillis = switched ?: it.switchMillis) }
+                    PerformanceMetrics.sample("first_frame", firstFrame, if (isLocalPlayback) "local" else "")
+                    if (switched != null) PerformanceMetrics.sample("switch", switched)
+                    scheduleNextPrefetch()
+                }
+                startedThisAttempt = true
+                hasFirstFrame = true
+                isRecovering = false
+                // 出第一帧不代表故障过去了：流每次放几秒就断，立刻清零会无限重连。
+                // 稳定播放一段时间才把退避次数还原
+                stableJob?.cancel()
+                stableJob = scope.launch {
+                    delay(STABLE_PLAYBACK_MILLIS)
+                    retryAttempt = 0
+                }
+            }
+
+            PlaybackBackendEvent.Ended -> {
+                val key = positionKey
+                scope.launch { runCatchingNonCancel { repository.savePlaybackPosition(key, 0L) } }
+                // 放完接着放下一集。switchTo 会按片尾位置再存一次，而片尾位置存的也是 0
+                nextEntry?.let(::playEntry)
+            }
+
+            is PlaybackBackendEvent.Error -> onPlaybackError(event.detail)
+        }
+    }
+
+    /**
+     * 这一集稳稳播起来之后，把下一条（与再下一条）的描述备好：点下一条时不必再从查详情做起。
+     * 只取描述，不读视频数据；等几秒再做，不与起播抢请求。
+     */
+    private fun scheduleNextPrefetch() {
+        prefetchJob?.cancel()
+        if (!prefetchNext || isLocalPlayback) return
+        prefetchJob = scope.launch {
+            delay(NEXT_PREFETCH_DELAY_MILLIS)
+            val upcoming = listOfNotNull(nextEntry, sectionGroups.getOrNull(groupIndex + 2)?.takeIf { groupIndex >= 0 }?.let(::preferredIn))
+            var ready = false
+            for (entry in upcoming) {
+                val fetched = runCatching { repository.prefetchDescriptor(entry.fileId) }.getOrDefault(false)
+                if (entry === upcoming.first()) ready = fetched
+            }
+            PerformanceMetrics.update { it.copy(nextPrefetched = ready) }
+        }
+    }
+
+    private fun onPlaybackError(detail: String?) {
+        stableJob?.cancel()
+        val message = detail?.takeIf { it.isNotBlank() }?.let { "播放失败：$it" } ?: "播放中断"
+        PikoLog.w(
+            TAG,
+            "$message（${if (isLocalPlayback) "本地" else if (usingProxy) "代理" else "直链"}，" +
+                "${if (startedThisAttempt) "播放中，第 ${retryAttempt + 1} 次重连" else "首帧前"}，位置 ${currentPosition()} ms）",
+        )
+        // 本地文件重来一遍还是同一个错误，直接交给用户
+        if (isLocalPlayback) {
+            failure = message
+            return
+        }
+
+        if (!startedThisAttempt) {
+            // 还没出第一帧：同一条路原样重试没有意义，换一条
+            pendingStartMillis = attemptStartMillis
+            if (usingProxy && !directLinkTried) {
+                // 代理与直链读的是同一份字节，先排除代理本身的问题。只试一次：
+                // 直链也失败就说明坏的不是代理，换到转码流后不必再绕一遍直链
+                directLinkTried = true
+                preferDirectLink = true
+                isRecovering = true
+                reload()
+                return
+            }
+            val transcode = mediaInfo?.bestTranscodeName()
+            if (activeQuality == null && transcode != null) {
+                preferDirectLink = false
+                requestedQuality = transcode
+                isRecovering = true
+                _messages.tryEmit("原画无法播放，已切换转码")
+                reload()
+                return
+            }
+            pendingStartMillis = null
+            isRecovering = false
+            failure = message
+            return
+        }
+
+        if (retryAttempt >= RECOVERY_DELAYS_MILLIS.size) {
+            isRecovering = false
+            failure = message
+            return
+        }
+        val resumeFrom = currentPosition()
+        isRecovering = true
+        recoveryJob?.cancel()
+        recoveryJob = scope.launch {
+            delay(RECOVERY_DELAYS_MILLIS[retryAttempt])
+            retryAttempt += 1
+            pendingStartMillis = resumeFrom
+            reload()
+        }
+    }
+
+    private fun showResumeTip(fromMillis: Long) {
+        resumedFromMillis = fromMillis
+        resumeTipJob?.cancel()
+        resumeTipJob = scope.launch {
+            delay(RESUME_TIP_MILLIS)
+            resumedFromMillis = null
+        }
+    }
+
+    private suspend fun persistLoop() {
+        try {
+            while (true) {
+                delay(PERSIST_INTERVAL_MILLIS)
+                persist(positionKey, lastKnownPositionMillis, durationMillis)
+                reportPlay(force = false)
+            }
+        } finally {
+            // 离开播放器时补一次，否则最后不足 5 秒的进度会丢
+            withContext(NonCancellable) {
+                persist(positionKey, lastKnownPositionMillis, durationMillis)
+                reportPlay(force = true)
+            }
+        }
+    }
+
+    // 上一次上报的文件与时刻。服务端丢掉同一文件间隔太短的上报且不报错，所以自己节流
+    private var lastReportedFileId = ""
+    private var lastReportedAt = TimeSource.Monotonic.markNow()
+
+    /**
+     * 把进度报给 PikPak 的播放历史。要在出了第一帧之后、位置确实在走的时候才报：
+     * 换片途中报出去的是上一个文件的位置。[force] 用于离开播放器，这时不看间隔。
+     */
+    private suspend fun reportPlay(force: Boolean) {
+        val id = fileId
+        if (!startedThisAttempt || isImage || id.isBlank()) return
+        val sameFile = id == lastReportedFileId
+        if (!force && sameFile && lastReportedAt.elapsedNow() < PLAY_REPORT_INTERVAL) return
+        lastReportedFileId = id
+        lastReportedAt = TimeSource.Monotonic.markNow()
+        runCatchingNonCancel { repository.reportPlay(id, lastKnownPositionMillis, durationMillis) }
+    }
+
+    private suspend fun persist(key: String, positionMillis: Long, durationMillis: Long) {
+        if (key.isBlank() || isImage) return
+        runCatchingNonCancel {
+            // 放完最后十秒记 0，下次从头播，而不是停在片尾
+            if (durationMillis > 0L && positionMillis >= durationMillis - NEAR_END_MILLIS) {
+                repository.savePlaybackPosition(key, 0L)
+            } else if (positionMillis > MIN_PERSIST_MILLIS) {
+                repository.savePlaybackPosition(key, positionMillis)
+            }
+        }
+    }
+
+    private fun closePrepared() {
+        prepared?.close()
+        prepared = null
+        subtitleStreams.forEach { it.close() }
+        subtitleStreams = emptyList()
+    }
+
+    /**
+     * 当前视频挂着的外挂字幕，各开一个代理会话，用户手动挂过的排在后面。播放列表还没取到时最多等一会儿：
+     * 开播后虽然也能再挂（见 [PlaybackBackend.addSubtitle]），但「文件里没有选中的字幕就选第一条外挂」
+     * 只在打开时判断一次，晚到的字幕不会被自动选中。开不起来的那条跳过。
+     */
+    private suspend fun openSubtitles(): List<ExternalSubtitle> {
+        if (!isPlaylistLoaded && !waitedForPlaylist) {
+            waitedForPlaylist = true
+            withTimeoutOrNull(PLAYLIST_WAIT_MILLIS) { snapshotFlow { isPlaylistLoaded }.first { it } }
+        }
+        val refs = currentEntry?.subtitles.orEmpty()
+        // 每开一条就登记，由 closePrepared 统一关。攒齐了再交出去的话，换集取消准备时已开的几条无人关闭；
+        // 整体赋值还会盖掉这期间 addDriveSubtitle 登记的那条
+        fun register(stream: ProxyStream): String {
+            subtitleStreams = subtitleStreams + stream
+            return stream.url
+        }
+        val subtitles = refs.mapNotNull { ref ->
+            val stream = repository.prepareSubtitle(ref.fileId) ?: return@mapNotNull null
+            ExternalSubtitle(url = register(stream), title = ref.language ?: "外挂字幕", language = ref.language?.let(::subtitleLanguageCode))
+        }
+        val manual = manualSubtitles.mapNotNull { subtitle ->
+            val url = subtitle.localPath
+                ?: subtitle.fileId?.let { id -> repository.prepareSubtitle(id)?.let(::register) }
+                ?: return@mapNotNull null
+            ExternalSubtitle(url = url, title = subtitle.title, language = null)
+        }
+        return subtitles + manual
+    }
+
+    private suspend fun runCatchingNonCancel(block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // 持久化失败不能掐掉播放
+        }
+    }
+
+    private companion object {
+        const val TAG = "Player"
+
+        /** 拖动后位置走过这么多才算画面走起来，计时里扣掉它；等这么久还不走就不记。 */
+        const val SEEK_EVIDENCE_MS = 300L
+        const val SEEK_SETTLE_MS = 200L
+        const val SEEK_WATCH_MS = 15_000L
+        const val RESUME_THRESHOLD_MILLIS = 3_000L
+
+        // 出第一帧后等这么久再备下一条：让起播先把连接用完
+        const val NEXT_PREFETCH_DELAY_MILLIS = 4_000L
+
+        // 打开第一个文件前等播放列表的上限，超过就不带外挂字幕先放
+        const val PLAYLIST_WAIT_MILLIS = 3_000L
+
+        // 开播前等云端续播位置的上限。它与取流并行，通常早已回来；网络差时不为它拖住开播
+        const val CLOUD_RESUME_WAIT_MILLIS = 1_500L
+
+        // 实测服务端丢掉间隔约 1.5 秒的上报、收下 6 秒的，留足余量
+        val PLAY_REPORT_INTERVAL = 10.seconds
+        const val NEAR_END_MILLIS = 10_000L
+        const val MIN_PERSIST_MILLIS = 1_500L
+        const val PERSIST_INTERVAL_MILLIS = 5_000L
+        const val RESUME_TIP_MILLIS = 5_000L
+        const val STABLE_PLAYBACK_MILLIS = 15_000L
+        val RECOVERY_DELAYS_MILLIS = longArrayOf(500L, 1_500L, 4_000L)
+    }
+}
+
+/** 手动挂上的一条字幕：本机的记路径，网盘的记 ID，每次打开文件时重新开代理会话。 */
+private class ManualSubtitle(val title: String, val localPath: String?, val fileId: String?)
+
+/** 解析器给的字幕语言（「简」「繁日」）换成 mpv 按 slang 匹配用的代码。 */
+private fun subtitleLanguageCode(label: String): String? = when {
+    label.startsWith("简") -> "chs"
+    label.startsWith("繁") -> "cht"
+    label.startsWith("英") -> "eng"
+    label.startsWith("日") -> "jpn"
+    else -> null
+}
