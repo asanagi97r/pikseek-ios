@@ -12,9 +12,9 @@ plugins {
 // 产物在 iosKit/build/XCFrameworks/<debug|release>/PikSeekKit.xcframework，真机与模拟器两份都在里面。
 kotlin {
     val xcframework = XCFramework("PikSeekKit")
-    // 模拟器的那一份跟着打包机的芯片走：苹果芯片的 Mac 用 arm64，英特尔芯片的用 x86_64（-Ppikseek.simulatorX64）
-    val simulator = if (providers.gradleProperty("pikseek.simulatorX64").isPresent) iosX64() else iosSimulatorArm64()
-    listOf(iosArm64(), simulator).forEach { target ->
+    // 英特尔芯片的打包机上只出真机那一份（-Ppikseek.deviceOnly）：PikPak 的 SDK 没有 x86_64 模拟器的版本，那边跑不了模拟器
+    val targets = if (providers.gradleProperty("pikseek.deviceOnly").isPresent) listOf(iosArm64()) else listOf(iosArm64(), iosSimulatorArm64())
+    targets.forEach { target ->
         target.binaries.framework {
             baseName = "PikSeekKit"
             isStatic = true
