@@ -1,0 +1,351 @@
+package dev.piko.data.auth
+
+import dev.piko.shared.net.ProxySetting
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/**
+ * 一组「键 = 值」的本机存储，每次写入即落盘。桌面是数据目录下的 settings.properties，iOS 是程序自己的偏好。
+ * 里面没有机密：登录会话不经这里，由认证模块加密存放。
+ */
+interface KeyValueSettings {
+    fun get(key: String, default: String = ""): String
+
+    fun set(key: String, value: String)
+
+    fun remove(key: String)
+
+    /** 以 [prefix] 开头的键，按字典序。 */
+    fun keysWithPrefix(prefix: String): List<String>
+}
+
+/**
+ * [PikoUserPreferences] 架在 [KeyValueSettings] 上的实现，每一项写穿到存储。桌面与 iOS 共用。
+ *
+ * @param defaultDownloadDirectory 没选过下载位置时用哪里
+ * @param onDownloadDirectoryChanged 下载位置变了（空串表示恢复默认）。桌面的下载落盘另从设置里读这一项，由它同步过去
+ */
+open class StoredPikoPreferences(
+    private val settings: KeyValueSettings,
+    defaultDownloadDirectory: () -> String,
+    private val onDownloadDirectoryChanged: (String) -> Unit = {},
+) : PikoUserPreferences {
+    private val spoiler = MutableStateFlow(settings.get(KEY_SPOILER, "true").toBoolean())
+    private val autoCheckUpdates = MutableStateFlow(settings.get(KEY_AUTO_CHECK_UPDATES, "true").toBoolean())
+    private val reduceMotion = MutableStateFlow(settings.get(KEY_REDUCE_MOTION) == "true")
+    private val heuristic = MutableStateFlow(settings.get(KEY_HEURISTIC, "true").toBoolean())
+    private val nameParsing = MutableStateFlow(settings.get(KEY_NAME_PARSING, "true").toBoolean())
+    private val bundleSubtitles = MutableStateFlow(settings.get(KEY_BUNDLE_SUBTITLES, "true").toBoolean())
+    private val autoCleanNames = MutableStateFlow(settings.get(KEY_AUTO_CLEAN_NAMES, "false").toBoolean())
+    // PikSeek 默认不开：设置同步会往网盘根目录的 .piko 文件夹里写文件，该由用户自己在设置里打开（Piko 默认是开的）
+    private val settingsSync = MutableStateFlow(settings.get(KEY_SETTINGS_SYNC, "false").toBoolean())
+    private val syncPlayHistory = MutableStateFlow(settings.get(KEY_SYNC_PLAY_HISTORY, "true").toBoolean())
+    private val themeMode = MutableStateFlow(settings.get(KEY_THEME_MODE).ifEmpty { null })
+    private val themeSeed = MutableStateFlow(settings.get(KEY_THEME_SEED).ifEmpty { null })
+    // 旧版只存了是否海报墙，没有新键时由它换算
+    private val driveViewMode = MutableStateFlow(
+        // 没选过时是海报墙，与 Android 相同；旧版只存了是否网格，明确关掉过的仍是列表
+        settings.get(KEY_DRIVE_VIEW_MODE).ifEmpty { if (settings.get(KEY_GRID_VIEW, "true").toBoolean()) "POSTER" else "LIST" },
+    )
+    private val sidebarCollapsed = MutableStateFlow(settings.get(KEY_SIDEBAR_COLLAPSED) == "true")
+    private val showExtensions = MutableStateFlow(settings.get(KEY_SHOW_EXTENSIONS, "true").toBoolean())
+    private val clipPanel = MutableStateFlow(
+        SidePanelPrefs(
+            open = settings.get(KEY_CLIP_PANEL_OPEN, "false").toBoolean(),
+            widthDp = settings.get(KEY_CLIP_PANEL_WIDTH).toFloatOrNull(),
+        ),
+    )
+    private val inspectorPanel = MutableStateFlow(
+        SidePanelPrefs(
+            open = settings.get(KEY_INSPECTOR_PANEL_OPEN, "false").toBoolean(),
+            widthDp = settings.get(KEY_INSPECTOR_PANEL_WIDTH).toFloatOrNull(),
+        ),
+    )
+    private val pikpakDomain = MutableStateFlow(settings.get(KEY_PIKPAK_DOMAIN))
+    private val snailMode = MutableStateFlow(
+        SnailMode(
+            enabled = settings.get(KEY_SNAIL_ENABLED, "false").toBoolean(),
+            downloadKiBps = settings.get(KEY_SNAIL_DOWNLOAD).toIntOrNull() ?: SnailMode.DEFAULT_DOWNLOAD_KIBPS,
+            uploadKiBps = settings.get(KEY_SNAIL_UPLOAD).toIntOrNull() ?: SnailMode.DEFAULT_UPLOAD_KIBPS,
+        ),
+    )
+    private val acceleration = MutableStateFlow(settings.get(KEY_ACCELERATION, "true").toBoolean())
+    private val connections = MutableStateFlow(settings.get(KEY_CONNECTIONS, "8").toIntOrNull() ?: 8)
+    private val archivePasswords = MutableStateFlow(settings.get(KEY_ARCHIVE_PASSWORDS))
+    private val recentMoveTargets = MutableStateFlow(settings.get(KEY_RECENT_MOVE_TARGETS))
+    private val pinnedFolders = MutableStateFlow(settings.get(KEY_PINNED_FOLDERS))
+    private val batchRename = MutableStateFlow(settings.get(KEY_BATCH_RENAME))
+    private val renameRegexTextMode = MutableStateFlow(settings.get(KEY_RENAME_REGEX_TEXT_MODE) == "true")
+    private val proxySetting = MutableStateFlow(ProxySetting.decode(settings.get(KEY_PROXY_SETTING)))
+    private val downloadPath = MutableStateFlow(
+        settings.get(KEY_DOWNLOAD_DIR, defaultDownloadDirectory()),
+    )
+
+    override suspend fun savePlaybackPosition(fileId: String, positionMs: Long) {
+        settings.set(KEY_PLAYBACK_PREFIX + fileId, positionMs.toString())
+        // 播放进度无限涨，超上限时清掉最旧的一批（key 有序，fileId 不是时间序，
+        // 粗粒度清理即可，丢的只是断点续播位置）。
+        val keys = settings.keysWithPrefix(KEY_PLAYBACK_PREFIX)
+        if (keys.size > MAX_PLAYBACK_ENTRIES) {
+            keys.take(keys.size - MAX_PLAYBACK_ENTRIES).forEach(settings::remove)
+        }
+    }
+
+    override suspend fun getPlaybackPosition(fileId: String): Long =
+        settings.get(KEY_PLAYBACK_PREFIX + fileId, "0").toLongOrNull() ?: 0L
+
+    override suspend fun saveLastFolder(folderId: String, folderName: String, stackSerialized: String) {
+        settings.set(KEY_LAST_FOLDER_ID, folderId)
+        settings.set(KEY_LAST_FOLDER_NAME, folderName)
+        settings.set(KEY_LAST_FOLDER_STACK, stackSerialized)
+    }
+
+    override suspend fun getLastFolder(): Triple<String, String, String> =
+        Triple(
+            settings.get(KEY_LAST_FOLDER_ID),
+            settings.get(KEY_LAST_FOLDER_NAME, "网盘"),
+            settings.get(KEY_LAST_FOLDER_STACK),
+        )
+
+    override val spoilerBlurFlow: Flow<Boolean> = spoiler.asStateFlow()
+    override suspend fun setSpoilerBlurEnabled(enabled: Boolean) {
+        settings.set(KEY_SPOILER, enabled.toString())
+        spoiler.value = enabled
+    }
+
+    override val autoCheckUpdatesFlow: Flow<Boolean> = autoCheckUpdates.asStateFlow()
+    override suspend fun setAutoCheckUpdates(enabled: Boolean) {
+        settings.set(KEY_AUTO_CHECK_UPDATES, enabled.toString())
+        autoCheckUpdates.value = enabled
+    }
+
+    override val reduceMotionFlow: Flow<Boolean> = reduceMotion.asStateFlow()
+    override suspend fun setReduceMotion(enabled: Boolean) {
+        settings.set(KEY_REDUCE_MOTION, enabled.toString())
+        reduceMotion.value = enabled
+    }
+
+    override val heuristicFilterFlow: Flow<Boolean> = heuristic.asStateFlow()
+    override suspend fun setHeuristicFilterEnabled(enabled: Boolean) {
+        settings.set(KEY_HEURISTIC, enabled.toString())
+        heuristic.value = enabled
+    }
+
+    override val nameParsingFlow: Flow<Boolean> = nameParsing.asStateFlow()
+    override suspend fun setNameParsingEnabled(enabled: Boolean) {
+        settings.set(KEY_NAME_PARSING, enabled.toString())
+        nameParsing.value = enabled
+    }
+
+    override val bundleSubtitlesFlow: Flow<Boolean> = bundleSubtitles.asStateFlow()
+    override suspend fun setBundleSubtitlesEnabled(enabled: Boolean) {
+        settings.set(KEY_BUNDLE_SUBTITLES, enabled.toString())
+        bundleSubtitles.value = enabled
+    }
+
+    override val autoCleanNamesFlow: Flow<Boolean> = autoCleanNames.asStateFlow()
+    override suspend fun setAutoCleanNamesEnabled(enabled: Boolean) {
+        settings.set(KEY_AUTO_CLEAN_NAMES, enabled.toString())
+        autoCleanNames.value = enabled
+    }
+
+    override val settingsSyncFlow: Flow<Boolean> = settingsSync.asStateFlow()
+    override suspend fun setSettingsSyncEnabled(enabled: Boolean) {
+        settings.set(KEY_SETTINGS_SYNC, enabled.toString())
+        settingsSync.value = enabled
+    }
+
+    override val syncPlayHistoryFlow: Flow<Boolean> = syncPlayHistory.asStateFlow()
+    override suspend fun setSyncPlayHistoryEnabled(enabled: Boolean) {
+        settings.set(KEY_SYNC_PLAY_HISTORY, enabled.toString())
+        syncPlayHistory.value = enabled
+    }
+
+    override val themeModeFlow: Flow<String?> = themeMode.asStateFlow()
+    override suspend fun setThemeMode(mode: String) {
+        settings.set(KEY_THEME_MODE, mode)
+        themeMode.value = mode
+    }
+
+    override val themeSeedFlow: Flow<String?> = themeSeed.asStateFlow()
+    override suspend fun setThemeSeed(seed: String?) {
+        settings.set(KEY_THEME_SEED, seed.orEmpty())
+        themeSeed.value = seed
+    }
+
+    override val driveViewModeFlow: Flow<String> = driveViewMode.asStateFlow()
+    override suspend fun setDriveViewMode(mode: String) {
+        settings.set(KEY_DRIVE_VIEW_MODE, mode)
+        driveViewMode.value = mode
+    }
+
+    override val sidebarCollapsedFlow: Flow<Boolean> = sidebarCollapsed.asStateFlow()
+    override suspend fun setSidebarCollapsed(collapsed: Boolean) {
+        settings.set(KEY_SIDEBAR_COLLAPSED, collapsed.toString())
+        sidebarCollapsed.value = collapsed
+    }
+
+    override val showExtensionsFlow: Flow<Boolean> = showExtensions.asStateFlow()
+    override suspend fun setShowExtensions(show: Boolean) {
+        settings.set(KEY_SHOW_EXTENSIONS, show.toString())
+        showExtensions.value = show
+    }
+
+    override val clipPanelFlow: Flow<SidePanelPrefs> = clipPanel.asStateFlow()
+    override suspend fun setClipPanelOpen(open: Boolean) {
+        settings.set(KEY_CLIP_PANEL_OPEN, open.toString())
+        clipPanel.value = clipPanel.value.copy(open = open)
+    }
+    override suspend fun setClipPanelWidth(widthDp: Float) {
+        settings.set(KEY_CLIP_PANEL_WIDTH, widthDp.toString())
+        clipPanel.value = clipPanel.value.copy(widthDp = widthDp)
+    }
+
+    override val inspectorPanelFlow: Flow<SidePanelPrefs> = inspectorPanel.asStateFlow()
+    override suspend fun setInspectorPanelOpen(open: Boolean) {
+        settings.set(KEY_INSPECTOR_PANEL_OPEN, open.toString())
+        inspectorPanel.value = inspectorPanel.value.copy(open = open)
+    }
+    override suspend fun setInspectorPanelWidth(widthDp: Float) {
+        settings.set(KEY_INSPECTOR_PANEL_WIDTH, widthDp.toString())
+        inspectorPanel.value = inspectorPanel.value.copy(widthDp = widthDp)
+    }
+
+    override val pikpakDomainFlow: Flow<String> = pikpakDomain.asStateFlow()
+    override suspend fun setPikpakDomain(root: String) {
+        settings.set(KEY_PIKPAK_DOMAIN, root)
+        pikpakDomain.value = root
+    }
+
+    override val snailModeFlow: Flow<SnailMode> = snailMode.asStateFlow()
+    override suspend fun setSnailMode(mode: SnailMode) {
+        settings.set(KEY_SNAIL_ENABLED, mode.enabled.toString())
+        settings.set(KEY_SNAIL_DOWNLOAD, mode.downloadKiBps.toString())
+        settings.set(KEY_SNAIL_UPLOAD, mode.uploadKiBps.toString())
+        snailMode.value = mode
+    }
+
+    override val concurrentAccelerationFlow: Flow<Boolean> = acceleration.asStateFlow()
+    override val concurrentConnectionsFlow: Flow<Int> = connections.asStateFlow()
+    override val downloadDirPathFlow: Flow<String> = downloadPath.asStateFlow()
+
+    override suspend fun setDownloadDirPath(path: String) {
+        // 空路径是「恢复默认」，与 Android 端同一约定
+        onDownloadDirectoryChanged(path)
+        settings.set(KEY_DOWNLOAD_DIR, path)
+        downloadPath.value = path
+    }
+
+    override suspend fun getDownloadDirPath(): String = downloadPath.value
+
+    override suspend fun setConcurrentAccelerationEnabled(enabled: Boolean) {
+        settings.set(KEY_ACCELERATION, enabled.toString())
+        acceleration.value = enabled
+    }
+
+    override suspend fun loadDownloadTasks(): String = settings.get(KEY_DOWNLOAD_TASKS)
+
+    override suspend fun saveDownloadTasks(serialized: String) {
+        settings.set(KEY_DOWNLOAD_TASKS, serialized)
+    }
+
+    override suspend fun loadUploadTasks(): String = settings.get(KEY_UPLOAD_TASKS)
+
+    override suspend fun saveUploadTasks(serialized: String) {
+        settings.set(KEY_UPLOAD_TASKS, serialized)
+    }
+
+    override suspend fun loadOfflinePacks(): String = settings.get(KEY_OFFLINE_PACKS)
+
+    override suspend fun saveOfflinePacks(serialized: String) {
+        settings.set(KEY_OFFLINE_PACKS, serialized)
+    }
+
+    override val archivePasswordsFlow: Flow<String> = archivePasswords.asStateFlow()
+    override suspend fun saveArchivePasswords(serialized: String) {
+        settings.set(KEY_ARCHIVE_PASSWORDS, serialized)
+        archivePasswords.value = serialized
+    }
+
+    override val recentMoveTargetsFlow: Flow<String> = recentMoveTargets.asStateFlow()
+    override suspend fun saveRecentMoveTargets(serialized: String) {
+        settings.set(KEY_RECENT_MOVE_TARGETS, serialized)
+        recentMoveTargets.value = serialized
+    }
+
+    override val pinnedFoldersFlow: Flow<String> = pinnedFolders.asStateFlow()
+    override suspend fun savePinnedFolders(serialized: String) {
+        settings.set(KEY_PINNED_FOLDERS, serialized)
+        pinnedFolders.value = serialized
+    }
+
+    override val batchRenameFlow: Flow<String> = batchRename.asStateFlow()
+    override suspend fun saveBatchRename(serialized: String) {
+        settings.set(KEY_BATCH_RENAME, serialized)
+        batchRename.value = serialized
+    }
+
+    override val renameRegexTextModeFlow: Flow<Boolean> = renameRegexTextMode.asStateFlow()
+    override suspend fun setRenameRegexTextMode(enabled: Boolean) {
+        settings.set(KEY_RENAME_REGEX_TEXT_MODE, enabled.toString())
+        renameRegexTextMode.value = enabled
+    }
+
+    override val proxySettingFlow: Flow<ProxySetting> = proxySetting.asStateFlow()
+    override suspend fun saveProxySetting(setting: ProxySetting) {
+        settings.set(KEY_PROXY_SETTING, setting.encode())
+        proxySetting.value = setting
+    }
+
+    override suspend fun getIgnoredUpdateVersion(): String? = settings.get(KEY_IGNORED_UPDATE).ifEmpty { null }
+
+    override suspend fun setIgnoredUpdateVersion(version: String) {
+        settings.set(KEY_IGNORED_UPDATE, version)
+    }
+
+    private companion object {
+        const val MAX_PLAYBACK_ENTRIES = 500
+        const val KEY_DOWNLOAD_TASKS = "download.tasks"
+        const val KEY_OFFLINE_PACKS = "download.offlinePacks"
+        const val KEY_UPLOAD_TASKS = "upload.tasks"
+        const val KEY_ARCHIVE_PASSWORDS = "drive.archivePasswords"
+        const val KEY_RECENT_MOVE_TARGETS = "drive.recentMoveTargets"
+        const val KEY_PINNED_FOLDERS = "drive.pinnedFolders"
+        const val KEY_BATCH_RENAME = "drive.batchRename"
+        const val KEY_RENAME_REGEX_TEXT_MODE = "drive.renameRegexTextMode"
+        const val KEY_PROXY_SETTING = "network.proxy"
+        const val KEY_IGNORED_UPDATE = "update.ignoredVersion"
+        const val KEY_SPOILER = "ui.spoilerBlur"
+        const val KEY_AUTO_CHECK_UPDATES = "update.autoCheck"
+        const val KEY_REDUCE_MOTION = "ui.reduceMotion"
+        const val KEY_HEURISTIC = "ui.heuristicFilter"
+        const val KEY_BUNDLE_SUBTITLES = "ui.bundleSubtitles"
+        const val KEY_AUTO_CLEAN_NAMES = "drive.autoCleanNames"
+        const val KEY_SETTINGS_SYNC = "sync.settings"
+        const val KEY_SYNC_PLAY_HISTORY = "player.syncPlayHistory"
+        const val KEY_NAME_PARSING = "ui.nameParsing"
+        const val KEY_GRID_VIEW = "ui.gridView"
+        const val KEY_DRIVE_VIEW_MODE = "ui.driveViewMode"
+        const val KEY_CLIP_PANEL_OPEN = "ui.clipPanel.open"
+        const val KEY_CLIP_PANEL_WIDTH = "ui.clipPanel.width"
+        const val KEY_SIDEBAR_COLLAPSED = "ui.sidebar.collapsed"
+        const val KEY_SHOW_EXTENSIONS = "ui.drive.showExtensions"
+        const val KEY_INSPECTOR_PANEL_OPEN = "ui.inspectorPanel.open"
+        const val KEY_INSPECTOR_PANEL_WIDTH = "ui.inspectorPanel.width"
+        const val KEY_PIKPAK_DOMAIN = "network.pikpakDomain"
+        const val KEY_SNAIL_ENABLED = "transfer.snail.enabled"
+        const val KEY_SNAIL_DOWNLOAD = "transfer.snail.downloadKiBps"
+        const val KEY_SNAIL_UPLOAD = "transfer.snail.uploadKiBps"
+        // 沿用 Fluent 版设置页的键，旧值是小写的 system、light、dark，解析时不分大小写
+        const val KEY_THEME_MODE = "themeMode"
+        const val KEY_THEME_SEED = "ui.themeSeed"
+        const val KEY_ACCELERATION = "download.concurrentAcceleration"
+        const val KEY_CONNECTIONS = "download.concurrentConnections"
+        const val KEY_DOWNLOAD_DIR = "download.directory"
+        const val KEY_LAST_FOLDER_ID = "drive.lastFolderId"
+        const val KEY_LAST_FOLDER_NAME = "drive.lastFolderName"
+        const val KEY_LAST_FOLDER_STACK = "drive.lastFolderStack"
+        const val KEY_PLAYBACK_PREFIX = "playback."
+    }
+}

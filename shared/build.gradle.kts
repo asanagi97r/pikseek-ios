@@ -55,3 +55,12 @@ kotlin {
         }
     }
 }
+
+// 播放后端的测试真去解码：用程序自带的那份 libmpv 与仓库里的样片，不联网
+val mpvDirectory = rootProject.project(":desktopApp").layout.buildDirectory.dir("appResources/common/mpv")
+tasks.withType<Test> {
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
+    dependsOn(":desktopApp:bundledAppResources")
+    systemProperty("pikseek.mpv.dir", mpvDirectory.get().asFile.absolutePath)
+    systemProperty("pikseek.testdata", rootProject.file("testdata/media").absolutePath)
+}

@@ -33,3 +33,6 @@ include(":thumbnail")  // 时间轴缩略图引擎（与播放器分离）
 include(":shared")
 include(":ui")
 include(":desktopApp")
+
+// iOS 版的入口与平台适配（只在 macOS 上构建），Xcode 工程在 iosApp/
+include(":iosKit")

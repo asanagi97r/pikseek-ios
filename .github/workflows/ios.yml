@@ -44,16 +44,23 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}-
 
-      # 共用代码与各模块的 iOS 部分只能在 macOS 上编译。失败不拦后面的步骤：Swift 那一侧照样出结果
-      - name: Compile Kotlin for iOS
+      # Kotlin 一侧的全部代码（共用模块 + iOS 入口）打成静态框架，Xcode 工程链接它
+      - name: Build Kotlin framework
         id: kotlin
-        continue-on-error: true
         run: |
           set -o pipefail
-          bash ./gradlew ${{ vars.KOTLIN_IOS_TASKS || ':ui:compileKotlinIosSimulatorArm64' }} \
+          BUILD=${{ vars.KOTLIN_BUILD_TYPE || 'Debug' }}
+          LOWER=$(echo "$BUILD" | tr '[:upper:]' '[:lower:]')
+          bash ./gradlew ":iosKit:assemblePikSeekKit${BUILD}XCFramework" \
             "-Porg.gradle.java.installations.paths=$JAVA_HOME" --console=plain --stacktrace \
             2>&1 | tee out/kotlin-ios.full.log | grep -E "^e: |^> Task .*(FAILED)|BUILD|What went wrong" || true
           grep -q "BUILD SUCCESSFUL" out/kotlin-ios.full.log
+          mkdir -p iosApp/Frameworks
+          rm -rf iosApp/Frameworks/PikSeekKit.xcframework
+          cp -R "iosKit/build/XCFrameworks/$LOWER/PikSeekKit.xcframework" iosApp/Frameworks/
+          # Swift 一侧照着这份头文件实现接口：留一份要紧的声明，对不上时好查
+          HEADER=$(find iosApp/Frameworks/PikSeekKit.xcframework -name PikSeekKit.h | head -1)
+          grep -nE "^@(interface|protocol) |^- |^\+ |^@property" "$HEADER" | grep -nE -A40 "(HttpBridge|KeychainBridge|MpvPlayerBridge|MpvEvents|FrameGrabberBridge|NativeServices|HttpResult|KeychainItem|GrabbedFrame|PikSeekIos)\b" | cut -c1-300 | head -400 > out/kotlin-header.txt || true
 
       - name: Generate Xcode project
         run: |
@@ -89,17 +96,13 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b
           APP=iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app
           xcrun simctl install "$UDID" "$APP"
-          for SAMPLE in control-mpeg4-aac.mp4 wmv2-wmav2.wmv; do
-            NAME="${SAMPLE%%.*}"
-            SIMCTL_CHILD_PIKSEEK_PROBE="$SAMPLE" xcrun simctl launch --terminate-running-process "$UDID" dev.pikseek.ios
-            sleep 5
-            xcrun simctl io "$UDID" screenshot "out/probe-$NAME.png"
-            sleep 5
-            DATA=$(xcrun simctl get_app_container "$UDID" dev.pikseek.ios data)
-            cp "$DATA/Documents/probe.json" "out/probe-$NAME.json" || echo "no probe.json for $SAMPLE" > "out/probe-$NAME.json"
-            xcrun simctl terminate "$UDID" dev.pikseek.ios || true
-          done
-          xcrun simctl spawn "$UDID" log show --last 3m --predicate 'process == "PikSeek"' --style compact 2>/dev/null | tail -150 > out/simulator-log.txt || true
+          xcrun simctl launch --terminate-running-process "$UDID" dev.pikseek.ios
+          sleep 12
+          xcrun simctl io "$UDID" screenshot out/launch.png
+          DATA=$(xcrun simctl get_app_container "$UDID" dev.pikseek.ios data)
+          cp "$DATA"/Library/Application\ Support/PikSeek/logs/*.log out/ 2>/dev/null || true
+          xcrun simctl terminate "$UDID" dev.pikseek.ios || true
+          xcrun simctl spawn "$UDID" log show --last 3m --predicate 'process == "PikSeek"' --style compact 2>/dev/null | tail -200 > out/simulator-log.txt || true
 
       - name: Build for device (unsigned)
         run: |

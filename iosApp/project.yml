@@ -1,5 +1,8 @@
 # Xcode 工程由 XcodeGen 从这份文件生成（工程文件本身不进库）：
 #   cd iosApp && xcodegen generate
+# 先要有 Frameworks/PikSeekKit.xcframework：Kotlin 一侧的全部代码，由 Gradle 打出来再拷到这里
+#   ./gradlew :iosKit:assemblePikSeekKitReleaseXCFramework
+#   cp -R iosKit/build/XCFrameworks/release/PikSeekKit.xcframework iosApp/Frameworks/
 name: PikSeek
 options:
   bundleIdPrefix: dev.pikseek
@@ -25,6 +28,9 @@ targets:
     dependencies:
       - package: MPVKit
         product: MPVKit
+      # 静态框架，链接进主程序，不另外嵌入
+      - framework: Frameworks/PikSeekKit.xcframework
+        embed: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.pikseek.ios
@@ -38,6 +44,8 @@ targets:
         CODE_SIGNING_ALLOWED: "NO"
         CODE_SIGNING_REQUIRED: "NO"
         CODE_SIGN_IDENTITY: ""
+        # Kotlin 的静态框架里有 Objective-C 的类别，要整个链接进来
+        OTHER_LDFLAGS: "$(inherited) -ObjC"
     info:
       path: Generated/Info.plist
       properties:
@@ -53,7 +61,12 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+        # Compose 的界面要按屏幕的刷新率画（120 Hz 的机型上不锁在 60）
+        CADisableMinimumFrameDurationOnPhone: true
         # 本机回环代理（127.0.0.1）走明文 HTTP：只放开本机回环，别的仍要求 HTTPS
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        # 下载的文件在「文件」App 的「我的 iPhone → PikSeek」下看得到
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
         ITSAppUsesNonExemptEncryption: false

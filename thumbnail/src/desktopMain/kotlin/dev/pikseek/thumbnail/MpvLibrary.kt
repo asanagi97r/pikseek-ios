@@ -42,6 +42,7 @@ class MpvLibrary private constructor(private val module: MemorySegment, private 
     val getPropertyString = function("mpv_get_property_string", FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS))
     val setPropertyString = function("mpv_set_property_string", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS))
     val free = function("mpv_free", FunctionDescriptor.ofVoid(ADDRESS))
+    val observeProperty = function("mpv_observe_property", FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_LONG, ADDRESS, JAVA_INT))
     val errorString = function("mpv_error_string", FunctionDescriptor.of(ADDRESS, JAVA_INT))
     val clientApiVersion = function("mpv_client_api_version", FunctionDescriptor.of(JAVA_LONG))
 

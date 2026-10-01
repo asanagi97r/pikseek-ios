@@ -1,11 +1,12 @@
 package dev.piko.desktop
 
+import dev.piko.data.auth.KeyValueSettings
 import java.io.File
 import java.util.Properties
 
 class DesktopSettingsStore(
     private val file: File = dev.pikseek.platform.AppPaths.settingsFile.toFile(),
-) {
+) : KeyValueSettings {
     private val properties = Properties().also { values ->
         if (file.isFile) file.inputStream().use(values::load)
     }
@@ -31,18 +32,18 @@ class DesktopSettingsStore(
     }
 
     /** 通用 KV：给 DesktopPikoPreferences 做写穿持久化。调用方约定 key 命名空间。 */
-    fun get(key: String, default: String = ""): String =
+    override fun get(key: String, default: String): String =
         properties.getProperty(key) ?: default
 
-    fun set(key: String, value: String) {
+    override fun set(key: String, value: String) {
         properties.setProperty(key, value)
         save()
     }
 
-    fun keysWithPrefix(prefix: String): List<String> =
+    override fun keysWithPrefix(prefix: String): List<String> =
         properties.stringPropertyNames().filter { it.startsWith(prefix) }.sorted()
 
-    fun remove(key: String) {
+    override fun remove(key: String) {
         properties.remove(key)
         save()
     }
