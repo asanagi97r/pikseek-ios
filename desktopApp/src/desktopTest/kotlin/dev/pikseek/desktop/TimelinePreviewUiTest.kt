@@ -22,6 +22,7 @@ import dev.pikseek.platform.DragSeekMode
 import dev.pikseek.thumbnail.MediaFingerprint
 import dev.pikseek.thumbnail.MpvFrameGrabber
 import dev.pikseek.thumbnail.PreviewDensity
+import dev.pikseek.thumbnail.directoryOf
 import dev.pikseek.thumbnail.SeekingSource
 import dev.pikseek.thumbnail.ThumbnailCache
 import dev.pikseek.thumbnail.ThumbnailEngine

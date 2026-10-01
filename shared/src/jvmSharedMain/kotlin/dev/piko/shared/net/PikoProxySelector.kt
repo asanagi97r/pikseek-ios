@@ -40,7 +40,7 @@ object PikoProxySelector : ProxySelector() {
 
     override fun select(uri: URI): List<Proxy> {
         // 进程里各个 HTTP 客户端建新连接时都经过这里：只记目标主机名，见 NetworkAudit
-        dev.pikseek.security.NetworkAudit.record(uri)
+        dev.pikseek.security.NetworkAudit.record(uri.host)
         // 本机回环代理与局域网里的自己永远直连：播放器读的就是 127.0.0.1
         if (isLoopback(uri.host)) return NO_PROXY
         val current = setting

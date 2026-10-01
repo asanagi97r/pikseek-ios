@@ -1,5 +1,7 @@
 package dev.piko.ui.screens.player
 
+import dev.piko.ui.platform.pad2
+import dev.piko.ui.platform.fixed
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -136,9 +138,6 @@ import dev.piko.ui.platform.LocalFramelessWindow
 import dev.piko.ui.components.SheetAction
 import dev.piko.ui.platform.windowDragArea
 import kotlinx.coroutines.delay
-import java.math.BigDecimal
-import java.math.RoundingMode
-import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -1077,7 +1076,7 @@ internal fun formatSpeedMultiplier(speed: Float): String = formatSpeedPreset(spe
 
 // 按两位小数取整后去掉末尾的 0：1.00 显示为 1，1.50 显示为 1.5
 internal fun formatSpeedPreset(speed: Float): String =
-    BigDecimal(speed.toDouble()).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+    speed.toDouble().fixed(2).trimEnd('0').trimEnd('.')
 
 internal fun formatTime(millis: Long): String {
     val totalSeconds = (millis / 1000).coerceAtLeast(0)
@@ -1085,8 +1084,8 @@ internal fun formatTime(millis: Long): String {
     val minutes = (totalSeconds / 60) % 60
     val hours = totalSeconds / 3600
     return if (hours > 0) {
-        String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
+        "$hours:${pad2(minutes)}:${pad2(seconds)}"
     } else {
-        String.format(Locale.US, "%02d:%02d", minutes, seconds)
+        "${pad2(minutes)}:${pad2(seconds)}"
     }
 }

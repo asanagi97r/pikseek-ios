@@ -10,6 +10,8 @@ plugins {
 kotlin {
     jvm("desktop")
     jvmToolchain(25)
+    iosArm64()
+    iosSimulatorArm64()
 
     sourceSets {
         all {
@@ -18,6 +20,7 @@ kotlin {
             // 桌面端的 material3 停在 1.12.0-alpha03，其中不少 API 仍标着实验性
             languageSettings.optIn("androidx.compose.material3.ExperimentalMaterial3Api")
             languageSettings.optIn("androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
         }
         commonMain.dependencies {
             api(project(":shared"))

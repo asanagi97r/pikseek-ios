@@ -1,5 +1,6 @@
 package dev.piko.ui.components
 
+import dev.piko.ui.platform.pad2
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,7 +49,6 @@ import dev.piko.ui.LocalPikoServices
 import dev.piko.ui.platform.LocalPikoPlatform
 import dev.piko.ui.platform.VideoPreviewSupport
 import io.github.nihildigit.pikpak.FileStat
-import java.util.Locale
 import kotlinx.coroutines.delay
 
 fun formatTimeMs(ms: Long): String {
@@ -57,9 +57,9 @@ fun formatTimeMs(ms: Long): String {
     val m = (totalSec % 3600L) / 60L
     val s = totalSec % 60L
     return if (h > 0) {
-        String.format(Locale.getDefault(), "%02d:%02d:%02d", h, m, s)
+        "${pad2(h)}:${pad2(m)}:${pad2(s)}"
     } else {
-        String.format(Locale.getDefault(), "%02d:%02d", m, s)
+        "${pad2(m)}:${pad2(s)}"
     }
 }
 

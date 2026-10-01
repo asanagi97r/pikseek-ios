@@ -1,7 +1,6 @@
 package dev.pikseek.auth
 
 import java.io.IOException
-import java.net.URI
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -9,7 +8,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 /** 测试里顶替网络的传输层：记下每个请求，按脚本作答。 */
 internal class FakeTransport : PikPakAuthClient.Transport {
-    class Seen(val uri: URI, val headers: Map<String, String>, val body: JsonObject)
+    class Seen(val uri: AuthUrl, val headers: Map<String, String>, val body: JsonObject)
 
     val seen = ArrayList<Seen>()
 
@@ -19,7 +18,7 @@ internal class FakeTransport : PikPakAuthClient.Transport {
     var signIns = 0
 
     @Synchronized
-    override fun post(uri: URI, headers: Map<String, String>, body: ByteArray): PikPakAuthClient.Reply {
+    override fun post(uri: AuthUrl, headers: Map<String, String>, body: ByteArray): PikPakAuthClient.Reply {
         val request = Seen(uri, headers, Json.parseToJsonElement(body.decodeToString()).jsonObject)
         seen += request
         answer(request)?.let { return it }

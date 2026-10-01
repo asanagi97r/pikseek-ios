@@ -1,5 +1,6 @@
 package dev.piko.shared.data
 
+import kotlin.concurrent.Volatile
 import dev.piko.shared.log.PikoLog
 import dev.pikseek.auth.AccountProfile
 import dev.pikseek.auth.AuthRejectedException

@@ -1,5 +1,8 @@
 package dev.piko.shared.rename
 
+import dev.piko.shared.text.groupRange
+
+
 /** 在预览里选中原名的一段后要做的事。 */
 enum class SelectionEdit {
     DELETE,
@@ -66,7 +69,7 @@ fun proposeSelectionRule(
         val find = positionalFind(text, left, start, end, right, selected)
         val regex = compile(find, options)
         val match = regex?.find(text)
-        if (match != null && match.groups[1]?.range == start until end) {
+        if (match != null && match.groups[1]?.groupRange == start until end) {
             val leftText = text.substring(left, start)
             val rightText = text.substring(end, right)
             if (!isExpressibleText(leftText) || !isExpressibleText(rightText)) return null

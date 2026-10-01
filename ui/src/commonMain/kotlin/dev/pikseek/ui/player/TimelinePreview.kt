@@ -1,5 +1,6 @@
 package dev.pikseek.ui.player
 
+import dev.piko.ui.platform.monotonicMillis
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -50,9 +51,8 @@ class TimelinePreview(
     var progress by mutableStateOf<ThumbnailProgress?>(null)
 
     // 帧转成位图要拷一次像素，悬停时来回扫会反复用到同几张，留一小批
-    private val bitmaps = object : LinkedHashMap<ThumbnailFrame, ImageBitmap>(32, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<ThumbnailFrame, ImageBitmap>?): Boolean = size > BITMAP_CACHE
-    }
+    // 按最近用到的先后排着：用到的挪到末尾，满了从头上丢
+    private val bitmaps = LinkedHashMap<ThumbnailFrame, ImageBitmap>()
     private val dragPolicy = DragSeekPolicy()
 
     /**
@@ -63,12 +63,19 @@ class TimelinePreview(
         val current = session ?: return null
         val frame = current.frameAt(timeMs)
         if (frame == null || kotlin.math.abs(frame.timeMs - timeMs) > current.plan.intervalMs) current.prefer(timeMs)
-        return frame?.let { bitmaps.getOrPut(it) { it.toImageBitmap() } }
+        return frame?.let(::bitmapOf)
+    }
+
+    private fun bitmapOf(frame: ThumbnailFrame): ImageBitmap {
+        val bitmap = bitmaps.remove(frame) ?: frame.toImageBitmap()
+        bitmaps[frame] = bitmap
+        if (bitmaps.size > BITMAP_CACHE) bitmaps.remove(bitmaps.keys.first())
+        return bitmap
     }
 
     /** 拖动中指针到了 [targetMs]。按设置决定主画面要不要跟过去。 */
     fun onDrag(targetMs: Long, durationMs: Long) {
-        if (dragPolicy.shouldSeek(dragSeekMode(), targetMs, durationMs, System.nanoTime() / 1_000_000)) seek(targetMs)
+        if (dragPolicy.shouldSeek(dragSeekMode(), targetMs, durationMs, monotonicMillis())) seek(targetMs)
     }
 
     /** 松手。最后那一次跳转由进度条自己发，这里只把拖动的记录清掉。 */

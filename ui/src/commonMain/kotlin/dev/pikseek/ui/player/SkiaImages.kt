@@ -5,8 +5,6 @@ import androidx.compose.ui.graphics.asComposeImageBitmap
 import dev.pikseek.thumbnail.DecodedSprite
 import dev.pikseek.thumbnail.SpriteCodec
 import dev.pikseek.thumbnail.ThumbnailFrame
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
@@ -23,7 +21,14 @@ private fun info(width: Int, height: Int) = ImageInfo(width, height, ColorType.B
 
 private fun bytesOf(pixels: IntArray): ByteArray {
     val bytes = ByteArray(pixels.size * 4)
-    ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().put(pixels)
+    var at = 0
+    for (pixel in pixels) {
+        bytes[at] = pixel.toByte()
+        bytes[at + 1] = (pixel shr 8).toByte()
+        bytes[at + 2] = (pixel shr 16).toByte()
+        bytes[at + 3] = (pixel ushr 24).toByte()
+        at += 4
+    }
     return bytes
 }
 
@@ -54,10 +59,12 @@ object WebpSpriteCodec : SpriteCodec {
             try {
                 if (!bitmap.allocPixels(info(image.width, image.height)) || !image.readPixels(bitmap)) return null
                 val raw = bitmap.readPixels(info(image.width, image.height), image.width * 4) ?: return null
-                val pixels = IntArray(image.width * image.height)
-                ByteBuffer.wrap(raw).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get(pixels)
                 // 不透明：解出来的 alpha 一律当 0xFF
-                for (index in pixels.indices) pixels[index] = pixels[index] or 0xFF000000.toInt()
+                val pixels = IntArray(image.width * image.height) { index ->
+                    val at = index * 4
+                    0xFF000000.toInt() or ((raw[at + 2].toInt() and 0xFF) shl 16) or
+                        ((raw[at + 1].toInt() and 0xFF) shl 8) or (raw[at].toInt() and 0xFF)
+                }
                 DecodedSprite(image.width, image.height, pixels)
             } finally {
                 bitmap.close()

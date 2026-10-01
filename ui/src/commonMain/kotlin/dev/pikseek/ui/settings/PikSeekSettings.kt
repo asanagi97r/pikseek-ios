@@ -1,5 +1,7 @@
 package dev.pikseek.ui.settings
 
+import dev.piko.ui.platform.fixed
+import dev.piko.ui.platform.Dates
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -188,9 +190,9 @@ private fun densityHint(density: ThumbnailDensity): String = when (density) {
 private fun limitLabel(bytes: Long): String = if (bytes <= 0) "不限" else "${bytes / AppSettings.GIB} GB"
 
 internal fun megabytes(bytes: Long): String =
-    if (bytes >= AppSettings.GIB) "%.2f GB".format(bytes.toDouble() / AppSettings.GIB) else "%.1f MB".format(bytes / 1024.0 / 1024.0)
+    if (bytes >= AppSettings.GIB) "${(bytes.toDouble() / AppSettings.GIB).fixed(2)} GB" else "${(bytes / 1024.0 / 1024.0).fixed(1)} MB"
 
-internal fun fileStamp(): String = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
+internal fun fileStamp(): String = Dates.fileStamp()
 
 internal class Choice<T>(val value: T, val label: String, val description: String?)
 

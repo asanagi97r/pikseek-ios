@@ -30,6 +30,31 @@ jobs:
             uname -m
           } | tee out/environment.txt
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: "25"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.konan
+          key: gradle-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      # 共用代码与各模块的 iOS 部分只能在 macOS 上编译。失败不拦后面的步骤：Swift 那一侧照样出结果
+      - name: Compile Kotlin for iOS
+        id: kotlin
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          bash ./gradlew ${{ vars.KOTLIN_IOS_TASKS || ':ui:compileKotlinIosSimulatorArm64' }} \
+            "-Porg.gradle.java.installations.paths=$JAVA_HOME" --console=plain --stacktrace \
+            2>&1 | tee out/kotlin-ios.full.log | grep -E "^e: |^> Task .*(FAILED)|BUILD|What went wrong" || true
+          grep -q "BUILD SUCCESSFUL" out/kotlin-ios.full.log
+
       - name: Generate Xcode project
         run: |
           which xcodegen || brew install xcodegen
@@ -103,10 +128,10 @@ jobs:
         run: |
           for LOG in out/*.full.log; do
             [ -f "$LOG" ] || continue
-            { grep -nE "error:|fatal|Undefined symbol|ld: |BUILD (SUCCEEDED|FAILED)" "$LOG" | head -150; echo "----- tail -----"; tail -60 "$LOG"; } > "${LOG%.full.log}.log"
+            { grep -nE "^e: |error:|fatal|Undefined symbol|ld: |What went wrong|BUILD (SUCCEEDED|SUCCESSFUL|FAILED)" "$LOG" | cut -c1-400 | head -250; echo "----- tail -----"; tail -60 "$LOG" | cut -c1-400; } > "${LOG%.full.log}.log"
             rm "$LOG"
           done
-          echo "run=${GITHUB_RUN_NUMBER} sha=${GITHUB_SHA} status=${{ job.status }} at=$(date -u +%FT%TZ)" > out/RESULT.txt
+          echo "run=${GITHUB_RUN_NUMBER} sha=${GITHUB_SHA} status=${{ job.status }} kotlin=${{ steps.kotlin.outcome }} at=$(date -u +%FT%TZ)" > out/RESULT.txt
           cd out
           git init -q -b ci-results
           git add -A

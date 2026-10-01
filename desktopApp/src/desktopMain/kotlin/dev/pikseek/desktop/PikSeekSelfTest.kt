@@ -20,7 +20,9 @@ import dev.pikseek.thumbnail.ThumbnailState
 import dev.pikseek.ui.player.WebpSpriteCodec
 import dev.pikseek.ui.settings.authSection
 import java.io.File
-import java.net.URI
+import dev.pikseek.auth.AuthUrl
+import dev.pikseek.thumbnail.directoryOf
+import dev.pikseek.security.scan
 import java.nio.file.Files
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -68,8 +70,8 @@ internal object PikSeekSelfTest {
             val restored = AuthBroker(DpapiCredentialStore(directory), fake).also { it.restore() }.session("selftest@example.com")
             report("auth.restored=${restored?.accessToken == session.accessToken}")
 
-            val blocked = runCatching { AuthNetworkPolicy.check(URI("https://example.com/v1/auth/signin")) }.isFailure
-            val allowed = runCatching { AuthNetworkPolicy.check(URI("https://user.mypikpak.com/v1/auth/signin")) }.isSuccess
+            val blocked = runCatching { AuthNetworkPolicy.check(AuthUrl.parse("https://example.com/v1/auth/signin")) }.isFailure
+            val allowed = runCatching { AuthNetworkPolicy.check(AuthUrl.parse("https://user.mypikpak.com/v1/auth/signin")) }.isSuccess
             report("policy.blocksForeign=$blocked policy.allowsOfficial=$allowed")
 
             // 只建客户端，不发请求：确认 java.net.http 这个模块随运行时带上了

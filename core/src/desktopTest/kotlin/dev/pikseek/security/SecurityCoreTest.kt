@@ -1,7 +1,7 @@
 package dev.pikseek.security
 
 import java.nio.file.Files
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -104,7 +104,7 @@ class NetworkAuditTest {
         // 调用方给过的用途留着，后面没给用途的一次不把它冲掉
         assertEquals("Auth：密码登录", auth.purpose)
 
-        val text = NetworkAudit.exportText(nowMillis = 10_000, zone = ZoneId.of("UTC"))
+        val text = NetworkAudit.exportText(nowMillis = 10_000, zone = TimeZone.UTC)
         assertTrue("dl-a10b-0621.mypikpak.com" in text)
         assertFalse("FILEID" in text)
         assertFalse("SIGNATURE" in text)
@@ -153,7 +153,7 @@ class SecurityReportTest {
             "Authentication",
             listOf("session stored with DPAPI" to "Yes", "password stored" to "Never"),
         )
-        val text = SecurityReport.build(facts, listOf(section), nowMillis = 0, zone = ZoneId.of("UTC"))
+        val text = SecurityReport.build(facts, listOf(section), nowMillis = 0, zone = TimeZone.UTC)
         assertTrue("session stored with DPAPI: Yes" in text)
         assertTrue("plaintext credential files: 0" in text)
         assertTrue("telemetry: Disabled" in text)

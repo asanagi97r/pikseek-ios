@@ -1,5 +1,6 @@
 package dev.piko.shared.download
 
+import kotlinx.coroutines.IO
 import dev.piko.data.auth.PikoUserPreferences
 import dev.piko.data.repository.FileNameSanitizer
 import dev.piko.download.DownloadBatch

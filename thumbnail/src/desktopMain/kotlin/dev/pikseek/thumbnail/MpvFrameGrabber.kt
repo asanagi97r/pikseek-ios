@@ -18,7 +18,7 @@ import java.nio.file.Path
  * 取到的帧已由 mpv 缩到 [frameWidth] 宽（高度按比例取偶数），软件解码：缩略图只有两百来像素宽，
  * 用不着显卡，也免得与主播放器抢硬解的资源。
  */
-class MpvFrameGrabber(libraryDirectory: Path, private val frameWidth: Int = DEFAULT_WIDTH) : AutoCloseable {
+class MpvFrameGrabber(libraryDirectory: Path, private val frameWidth: Int = FrameGrabber.DEFAULT_WIDTH) : FrameGrabber {
     private val mpv = MpvLibrary.load(libraryDirectory)
     private val arena = Arena.ofShared()
     private val context: MemorySegment
@@ -34,15 +34,14 @@ class MpvFrameGrabber(libraryDirectory: Path, private val frameWidth: Int = DEFA
         check(code >= 0) { "mpv 初始化失败：${mpv.describeError(code)}" }
     }
 
-    /** 最近一次 [open] 的文件时长，毫秒；不知道为 0。 */
-    var durationMs: Long = 0
+    override var durationMs: Long = 0
         private set
 
     /**
      * 打开 [location]（本机路径或网址），停在第一帧上。打不开或 [timeoutMs] 内没出第一帧返回 false。
      * [startSeconds] 非空时直接从那里（最近的关键帧）打开。
      */
-    fun open(location: String, timeoutMs: Long = OPEN_TIMEOUT_MS, startSeconds: Double? = null): Boolean {
+    override fun open(location: String, timeoutMs: Long, startSeconds: Double?): Boolean {
         check(!closed) { "已关闭" }
         durationMs = 0
         drainEvents()
@@ -58,7 +57,7 @@ class MpvFrameGrabber(libraryDirectory: Path, private val frameWidth: Int = DEFA
     }
 
     /** 眼下停着的那一帧。没有画面时返回 null。 */
-    fun grab(): ThumbnailFrame? {
+    override fun grab(): ThumbnailFrame? {
         check(!closed) { "已关闭" }
         val timeMs = property("time-pos")?.toDoubleOrNull()?.let { (it * 1000).toLong() } ?: 0L
         return screenshot(timeMs)
@@ -68,7 +67,7 @@ class MpvFrameGrabber(libraryDirectory: Path, private val frameWidth: Int = DEFA
      * 跳到 [seconds] 之前最近的关键帧并取那一帧。跳到关键帧而不是精确时刻：精确定位要从关键帧一路解到目标，
      * 网络流上慢得多，而缩略图差几秒无所谓，帧的真实时刻记在返回值里。
      */
-    fun seekAndGrab(seconds: Double, timeoutMs: Long = SEEK_TIMEOUT_MS): ThumbnailFrame? {
+    override fun seekAndGrab(seconds: Double, timeoutMs: Long): ThumbnailFrame? {
         check(!closed) { "已关闭" }
         drainEvents()
         if (!command("seek", "%.3f".format(java.util.Locale.ROOT, seconds), "absolute+keyframes")) return null
@@ -190,33 +189,15 @@ class MpvFrameGrabber(libraryDirectory: Path, private val frameWidth: Int = DEFA
         }
     }
 
-    /**
-     * 竖拍的片子带着旋转元数据，画面输出时才转；软件截图拿到的是没转的。
-     * 截图的横竖与该显示的横竖对不上时，照元数据转过来。
-     */
     private fun rotated(frame: ThumbnailFrame): ThumbnailFrame {
-        val rotate = property("video-params/rotate")?.toIntOrNull()?.mod(360) ?: return frame
-        if (rotate != 90 && rotate != 270) return frame
+        val rotate = property("video-params/rotate")?.toIntOrNull() ?: return frame
         val displayWidth = property("dwidth")?.toIntOrNull() ?: return frame
         val displayHeight = property("dheight")?.toIntOrNull() ?: return frame
-        val alreadyUpright = (frame.width >= frame.height) == (displayWidth >= displayHeight)
-        if (alreadyUpright) return frame
-        val out = IntArray(frame.pixels.size)
-        val width = frame.height
-        val height = frame.width
-        for (y in 0 until frame.height) {
-            for (x in 0 until frame.width) {
-                val pixel = frame.pixels[y * frame.width + x]
-                if (rotate == 90) out[x * width + (width - 1 - y)] = pixel else out[(height - 1 - x) * width + y] = pixel
-            }
-        }
-        return ThumbnailFrame(frame.timeMs, width, height, out)
+        return frame.uprightFor(rotate, displayWidth, displayHeight)
     }
 
     companion object {
-        const val DEFAULT_WIDTH = 240
-        private const val OPEN_TIMEOUT_MS = 20_000L
-        private const val SEEK_TIMEOUT_MS = 20_000L
+        const val DEFAULT_WIDTH = FrameGrabber.DEFAULT_WIDTH
         private const val OPAQUE = 0xFF000000.toInt()
 
         // mpv_event：event_id(int) error(int) reply_userdata(u64) data(void*)

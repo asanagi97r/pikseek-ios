@@ -8,7 +8,7 @@ import dev.pikseek.auth.PikPakAuthClient
 import dev.pikseek.auth.SecureCredentialStore
 import io.github.nihildigit.pikpak.getQuota
 import java.io.IOException
-import java.net.URI
+import dev.pikseek.auth.AuthUrl
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
@@ -40,7 +40,7 @@ class SessionSmokeTest {
         @Volatile
         var rejectRefresh = false
 
-        override fun post(uri: URI, headers: Map<String, String>, body: ByteArray): PikPakAuthClient.Reply {
+        override fun post(uri: AuthUrl, headers: Map<String, String>, body: ByteArray): PikPakAuthClient.Reply {
             if (server.offline) throw IOException("smoke: network is down")
             paths += uri.path
             return when (uri.path) {

@@ -1,5 +1,7 @@
 package dev.pikseek.ui.settings
 
+import dev.pikseek.platform.TimeText
+import kotlinx.coroutines.IO
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,9 +44,6 @@ import dev.pikseek.auth.CredentialPersistence
 import dev.pikseek.security.HostCategory
 import dev.pikseek.security.NetworkAudit
 import dev.pikseek.security.SecurityReport
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -197,7 +196,7 @@ fun authSection(status: AuthStatus): SecurityReport.Section = SecurityReport.Sec
         add("auth network destinations" to status.allowedHosts.joinToString(", "))
         add(
             "last authentication request" to
-                (status.lastRequest?.let { "${it.purpose} -> ${it.host}, ${it.outcome}, ${Instant.ofEpochMilli(it.atMillis)}" } ?: "none this run"),
+                (status.lastRequest?.let { "${it.purpose} -> ${it.host}, ${it.outcome}, ${TimeText.stamp(it.atMillis)}" } ?: "none this run"),
         )
         add("auth requests blocked by policy" to status.blockedRequests.toString())
     },
@@ -236,6 +235,4 @@ private fun Fact(name: String, value: String, warn: Boolean = false) {
     }
 }
 
-private val CLOCK = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
-
-private fun clock(millis: Long): String = CLOCK.format(Instant.ofEpochMilli(millis))
+private fun clock(millis: Long): String = TimeText.clock(millis)

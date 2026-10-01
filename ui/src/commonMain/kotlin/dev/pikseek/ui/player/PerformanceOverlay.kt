@@ -1,5 +1,6 @@
 package dev.pikseek.ui.player
 
+import dev.piko.ui.platform.fixed
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -58,4 +59,4 @@ private fun Line(name: String, value: String) {
 
 private fun Long?.ms(): String = this?.let { "$it ms" } ?: "—"
 
-private fun megabytes(bytes: Long): String = "%.1f MB".format(bytes / 1024.0 / 1024.0)
+private fun megabytes(bytes: Long): String = "${(bytes / 1024.0 / 1024.0).fixed(1)} MB"

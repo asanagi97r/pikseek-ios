@@ -1,5 +1,8 @@
 package dev.piko.shared.naming
 
+import dev.piko.shared.text.groupRange
+
+
 // 番号只在文件名开头找：站点前缀（xxx.com@、[site.net]、123456_site_）与标签方括号
 // （[中文字幕]、[HD]）剥掉之后，番号必须是第一个记号。在全文里找会把动画文件名里的
 // 「Naruto_198」「HEVC-10」当成番号。
@@ -171,7 +174,7 @@ private fun matchCode(text: String, strict: Boolean): Pair<String, Int>? {
     }
     GLUED_SUFFIXED.find(text)?.let { match ->
         val letters = match.groupValues[1]
-        if (acceptablePrefix(letters)) return "${letters.uppercase()}-${match.groupValues[2]}" to match.groups[2]!!.range.last + 1
+        if (acceptablePrefix(letters)) return "${letters.uppercase()}-${match.groupValues[2]}" to match.groups[2]!!.groupRange.last + 1
     }
     if (!strict) {
         LOOSE.find(text)?.let { match ->
@@ -268,7 +271,7 @@ internal fun matchAv(stem: String, allowLanguageSuffix: Boolean): AvMatch? {
     val info = AvInfo(
         code = code, uncensored = uncensored, chineseSubtitles = chinese, part = part, site = site, marks = marks,
         // 片名取原文：按分隔符切开再拼回来，「vol.48」的点与片名里的连字符都丢了
-        title = cleanAvTitle(pieceMatches.getOrNull(consumed)?.let { suffixText.substring(it.groups[2]!!.range.first) }.orEmpty()),
+        title = cleanAvTitle(pieceMatches.getOrNull(consumed)?.let { suffixText.substring(it.groups[2]!!.groupRange.first) }.orEmpty()),
     )
     return AvMatch(info, tags.distinct())
 }

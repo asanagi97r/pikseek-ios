@@ -1,5 +1,8 @@
 package dev.piko.ui.screens.drive
 
+import kotlinx.datetime.minus
+import kotlinx.datetime.DateTimeUnit
+import dev.piko.ui.platform.Dates
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteForever
@@ -28,11 +31,6 @@ import dev.piko.ui.screens.player.formatTime
 import io.github.nihildigit.pikpak.DriveEvent
 import io.github.nihildigit.pikpak.EventType
 import io.github.nihildigit.pikpak.FileStat
-import java.time.LocalDate
-import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * 库里一行的附注，写在列表行的位置那一栏：最近添加是何时怎么加进来的，播放历史是何时看到哪里，
@@ -57,15 +55,15 @@ internal fun libraryNote(library: DriveLibrary, file: FileStat, event: DriveEven
 
 /** 今天、昨天写到分钟，更早的只写日期；跨年时带上年份。解析不了时不写。 */
 private fun formatEventTime(rfc3339: String): String? = runCatching {
-    val time = OffsetDateTime.parse(rfc3339).atZoneSameInstant(ZoneId.systemDefault())
-    val today = LocalDate.now()
-    val date = time.toLocalDate()
-    val clock = time.format(DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault()))
+    val time = Dates.local(Dates.parse(rfc3339))
+    val today = Dates.today()
+    val date = time.date
+    val clock = Dates.hourMinute(time)
     when {
         date == today -> "今天 $clock"
-        date == today.minusDays(1) -> "昨天 $clock"
-        date.year == today.year -> time.format(DateTimeFormatter.ofPattern("M 月 d 日", Locale.getDefault()))
-        else -> time.format(DateTimeFormatter.ofPattern("yyyy 年 M 月 d 日", Locale.getDefault()))
+        date == today.minus(1, DateTimeUnit.DAY) -> "昨天 $clock"
+        date.year == today.year -> Dates.monthDay(date)
+        else -> Dates.yearMonthDay(date)
     }
 }.getOrNull()
 

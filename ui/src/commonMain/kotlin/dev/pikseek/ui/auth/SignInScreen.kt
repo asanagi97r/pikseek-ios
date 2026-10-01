@@ -213,7 +213,7 @@ internal class SignInState(
     private fun messageOf(error: Throwable, mode: SignInMode): String = when (error) {
         is dev.pikseek.auth.AuthRejectedException -> error.message ?: "登录被拒绝"
         is dev.pikseek.auth.AuthPolicyViolationException -> error.message ?: "认证请求被拦下"
-        is java.io.IOException -> "连不上 PikPak 认证服务，请检查网络或代理设置"
+        is kotlinx.io.IOException -> "连不上 PikPak 认证服务，请检查网络或代理设置"
         is IllegalArgumentException -> error.message ?: "输入不完整"
         else -> if (mode == SignInMode.Password) "登录失败，请检查账号与密码" else "登录失败，请检查刷新令牌"
     }

@@ -1,5 +1,6 @@
 package dev.piko.ui.screens.share
 
+import dev.piko.ui.platform.Dates
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -87,8 +88,6 @@ import dev.piko.ui.platform.LocalPikoPlatform
 import io.github.nihildigit.pikpak.FileStat
 import io.github.nihildigit.pikpak.ShareStatus
 import io.github.nihildigit.pikpak.ShareSummary
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 
 /**
@@ -448,7 +447,7 @@ private fun ShareSummary.contentLabel(): String {
 }
 
 private fun ShareSummary.createdLabel(): String? = runCatching {
-    OffsetDateTime.parse(createTime).format(DateTimeFormatter.ofPattern("M 月 d 日"))
+    Dates.monthDay(Dates.local(Dates.parse(createTime)).date)
 }.getOrNull()
 
 private fun ShareSummary.statusLabel(): String = when (shareStatus) {
@@ -462,6 +461,6 @@ private fun ShareSummary.statusLabel(): String = when (shareStatus) {
 private fun ShareSummary.expirationLabel(): String? {
     if (expirationAt == "-1" || expirationDays == "-1") return "永久"
     return runCatching {
-        OffsetDateTime.parse(expirationAt).format(DateTimeFormatter.ofPattern("至 M 月 d 日"))
+        "至 " + Dates.monthDay(Dates.local(Dates.parse(expirationAt)).date)
     }.getOrNull()
 }

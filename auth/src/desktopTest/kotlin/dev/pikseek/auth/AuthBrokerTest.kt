@@ -331,7 +331,7 @@ class AuthNetworkPolicyTest {
     fun realTransportRefusesForeignHostsBeforeSending() {
         // 就算绕过 PikPakAuthClient 直接拿传输层，白名单外的地址也发不出去
         assertFailsWith<AuthPolicyViolationException> {
-            JdkTransport().post(URI("https://example.com/v1/auth/signin"), emptyMap(), ByteArray(0))
+            JdkTransport().post(AuthUrl.parse("https://example.com/v1/auth/signin"), emptyMap(), ByteArray(0))
         }
     }
 }
