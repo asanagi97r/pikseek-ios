@@ -59,7 +59,7 @@ jobs:
           LOWER=$(echo "$BUILD" | tr '[:upper:]' '[:lower:]')
           if [ "$(uname -m)" = x86_64 ]; then SIMULATOR=-Ppikseek.deviceOnly=true; else SIMULATOR=; fi
           bash ./gradlew ":iosKit:assemblePikSeekKit${BUILD}XCFramework" $SIMULATOR \
-            "-Porg.gradle.java.installations.paths=$JAVA_HOME" --console=plain --stacktrace \
+            "-Porg.gradle.java.installations.paths=$JAVA_HOME" --console=plain \
             2>&1 | tee out/kotlin-ios.full.log | grep -E "^e: |^> Task .*(FAILED)|BUILD|What went wrong" || true
           grep -q "BUILD SUCCESSFUL" out/kotlin-ios.full.log
           mkdir -p iosApp/Frameworks
