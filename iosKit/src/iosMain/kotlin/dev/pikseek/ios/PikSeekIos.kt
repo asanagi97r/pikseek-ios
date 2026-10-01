@@ -92,7 +92,8 @@ object PikSeekIos {
                 preferences,
                 IosDownloadStorage(downloads),
                 appScope,
-                segmentDownloader = UnsupportedSegmentDownloader(),
+                // 片段下载在桌面上靠一个只有 JVM 版的 MP4 库无损切片，iOS 上没有对应物，不给
+                segmentDownloader = null,
                 mediaRepository = mediaRepository,
             ),
             uploadSources = IosUploadSources(),

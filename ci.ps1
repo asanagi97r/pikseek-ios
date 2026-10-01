@@ -24,20 +24,25 @@ Write-Output ("waiting for run of " + $sha.Substring(0, 7))
 
 $deadline = (Get-Date).AddMinutes($TimeoutMinutes)
 $done = $false
+$runners = @('macos-latest', 'macos-15-intel')
+$winner = ''
 while ((Get-Date) -lt $deadline) {
     Start-Sleep -Seconds 30
-    # The workflow force-pushes its results to the ci-results branch with the commit it ran for in the message.
-    Git-Run fetch -q -f origin "+refs/heads/ci-results:refs/remotes/origin/ci-results" 2>$null
-    if ($LASTEXITCODE -ne 0) { continue }
-    $message = (Git-Run log -1 --format=%s origin/ci-results)
-    if ($message -match $sha) { $done = $true; break }
+    # Each runner force-pushes its results to its own branch, with the commit it ran for in the message.
+    foreach ($runner in $runners) {
+        Git-Run fetch -q -f origin "+refs/heads/ci-results-${runner}:refs/remotes/origin/ci-results-${runner}" 2>$null
+        if ($LASTEXITCODE -ne 0) { continue }
+        $message = (Git-Run log -1 --format=%s "origin/ci-results-$runner")
+        if ($message -match $sha) { $done = $true; $winner = $runner; break }
+    }
+    if ($done) { break }
 }
 if (-not $done) { Write-Output 'timed out waiting for results'; exit 3 }
 
 if (Test-Path $results) { [IO.Directory]::Delete($results, $true) }
 New-Item -ItemType Directory -Force $results | Out-Null
 $archive = Join-Path $results '_results.tar'
-Git-Run archive --format=tar -o $archive origin/ci-results
+Git-Run archive --format=tar -o $archive "origin/ci-results-$winner"
 tar -xf $archive -C $results
 [IO.File]::Delete($archive)
 Get-Content (Join-Path $results 'RESULT.txt')

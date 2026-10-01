@@ -15,8 +15,13 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-latest
-    timeout-minutes: 60
+    # 苹果芯片的 macOS 机器常常排不上，英特尔芯片的同时排一份，各出各的结果
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -51,7 +56,8 @@ jobs:
           set -o pipefail
           BUILD=${{ vars.KOTLIN_BUILD_TYPE || 'Debug' }}
           LOWER=$(echo "$BUILD" | tr '[:upper:]' '[:lower:]')
-          bash ./gradlew ":iosKit:assemblePikSeekKit${BUILD}XCFramework" \
+          if [ "$(uname -m)" = x86_64 ]; then SIMULATOR=-Ppikseek.simulatorX64=true; else SIMULATOR=; fi
+          bash ./gradlew ":iosKit:assemblePikSeekKit${BUILD}XCFramework" $SIMULATOR \
             "-Porg.gradle.java.installations.paths=$JAVA_HOME" --console=plain --stacktrace \
             2>&1 | tee out/kotlin-ios.full.log | grep -E "^e: |^> Task .*(FAILED)|BUILD|What went wrong" || true
           grep -q "BUILD SUCCESSFUL" out/kotlin-ios.full.log
@@ -73,7 +79,7 @@ jobs:
           cd iosApp
           xcodebuild -project PikSeek.xcodeproj -scheme PikSeek -configuration Debug \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO \
+            -derivedDataPath build ARCHS=$(uname -m) ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO \
             build 2>&1 | tee ../out/build-simulator.full.log | grep -E "error:|warning: unre|BUILD|\*\*" || true
           test -d build/Build/Products/Debug-iphonesimulator/PikSeek.app
 
@@ -132,7 +138,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: PikSeek-unsigned-ipa
+          name: PikSeek-unsigned-ipa-${{ matrix.runner }}
           path: PikSeek-unsigned.ipa
           retention-days: 14
 
@@ -144,9 +150,9 @@ jobs:
             { grep -nE "^e: |error:|fatal|Undefined symbol|ld: |What went wrong|BUILD (SUCCEEDED|SUCCESSFUL|FAILED)" "$LOG" | cut -c1-400 | head -250; echo "----- tail -----"; tail -60 "$LOG" | cut -c1-400; } > "${LOG%.full.log}.log"
             rm "$LOG"
           done
-          echo "run=${GITHUB_RUN_NUMBER} sha=${GITHUB_SHA} status=${{ job.status }} kotlin=${{ steps.kotlin.outcome }} at=$(date -u +%FT%TZ)" > out/RESULT.txt
+          echo "run=${GITHUB_RUN_NUMBER} runner=${{ matrix.runner }} sha=${GITHUB_SHA} status=${{ job.status }} kotlin=${{ steps.kotlin.outcome }} at=$(date -u +%FT%TZ)" > out/RESULT.txt
           cd out
-          git init -q -b ci-results
+          git init -q -b ci-results-${{ matrix.runner }}
           git add -A
-          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -q -m "run ${GITHUB_RUN_NUMBER} for ${GITHUB_SHA}"
-          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" ci-results
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -q -m "run ${GITHUB_RUN_NUMBER} on ${{ matrix.runner }} for ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" ci-results-${{ matrix.runner }}

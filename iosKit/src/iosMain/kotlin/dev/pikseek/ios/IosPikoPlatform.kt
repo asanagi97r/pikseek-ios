@@ -180,8 +180,9 @@ internal object MissingPreviewBackend : PreviewBackend {
     override val volume: Float? = null
     override val events: Flow<PlaybackBackendEvent> = emptyFlow()
 
-    override suspend fun open(target: PlaybackTarget, startMillis: Long, playWhenReady: Boolean, subtitles: List<ExternalSubtitle>) =
+    override suspend fun open(target: PlaybackTarget, startMillis: Long, playWhenReady: Boolean, subtitles: List<ExternalSubtitle>) {
         error("这台设备上建不出播放器")
+    }
 
     override fun stop() = Unit
 

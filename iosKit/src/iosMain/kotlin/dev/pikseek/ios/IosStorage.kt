@@ -2,8 +2,6 @@ package dev.pikseek.ios
 
 import dev.piko.data.auth.KeyValueSettings
 import dev.piko.shared.download.PikoDownloadStorage
-import dev.piko.shared.download.PikoSegmentDownloader
-import dev.piko.shared.download.PikoSegmentRequest
 import dev.piko.shared.upload.PikoUploadSources
 import dev.piko.shared.upload.UploadFolder
 import dev.piko.shared.upload.UploadSourceInfo
@@ -122,10 +120,4 @@ internal class IosUploadSources : PikoUploadSources {
     override fun release(uri: String) {
         runCatching { SystemFileSystem.delete(Path(uri), mustExist = false) }
     }
-}
-
-/** 片段下载在桌面上靠一个只有 JVM 版的 MP4 库无损切片，iOS 上没有对应物。 */
-internal class UnsupportedSegmentDownloader : PikoSegmentDownloader {
-    override suspend fun extract(request: PikoSegmentRequest, onProgress: suspend (Float) -> Unit): Result<String> =
-        Result.failure(UnsupportedOperationException("iOS 版暂不支持片段下载"))
 }

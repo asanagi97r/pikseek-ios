@@ -9,6 +9,8 @@ kotlin {
     jvmToolchain(25)
     iosArm64()
     iosSimulatorArm64()
+    // 英特尔芯片的 Mac 上的模拟器
+    iosX64()
 
     sourceSets {
         all {

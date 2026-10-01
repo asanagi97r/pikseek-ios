@@ -10,6 +10,8 @@ kotlin {
     jvmToolchain(25)
     iosArm64()
     iosSimulatorArm64()
+    // 英特尔芯片的 Mac 上的模拟器
+    iosX64()
 
     // Piko 里 Android 与桌面共用的 JVM 代码放在 jvmShared；这里只剩桌面一个目标，目录原样留着
     @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
