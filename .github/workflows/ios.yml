@@ -60,12 +60,15 @@ jobs:
           SIMULATOR=iosKit/build/bin/iosSimulatorArm64/debugFramework/PikSeekKit.framework
           if [ "$(uname -m)" = x86_64 ]; then
             TASKS=":iosKit:linkReleaseFrameworkIosArm64 -Ppikseek.deviceOnly=true"
+            HEAP=9g
             FRAMEWORKS="-framework $DEVICE"
           else
             TASKS=":iosKit:linkReleaseFrameworkIosArm64 :iosKit:linkDebugFrameworkIosSimulatorArm64"
+            HEAP=5g
             FRAMEWORKS="-framework $DEVICE -framework $SIMULATOR"
           fi
-          bash ./gradlew $TASKS \
+          # 发布构建的链接要的内存比 gradle.properties 里给桌面构建留的多
+          bash ./gradlew $TASKS "-Dorg.gradle.jvmargs=-Xmx$HEAP -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
             "-Porg.gradle.java.installations.paths=$JAVA_HOME" --console=plain \
             2>&1 | tee out/kotlin-ios.full.log | grep -E "^e: |^> Task .*(FAILED)|BUILD|What went wrong" || true
           grep -q "BUILD SUCCESSFUL" out/kotlin-ios.full.log

@@ -33,7 +33,11 @@ while ((Get-Date) -lt $deadline) {
         Git-Run fetch -q -f origin "+refs/heads/ci-results-${runner}:refs/remotes/origin/ci-results-${runner}" 2>$null
         if ($LASTEXITCODE -ne 0) { continue }
         $message = (Git-Run log -1 --format=%s "origin/ci-results-$runner")
-        if ($message -match $sha) { $done = $true; $winner = $runner; break }
+        # Prefer the Apple-silicon runner (it also runs the simulator self-test); take the Intel one only if it succeeded
+        if ($message -match $sha) {
+            $status = (Git-Run show "origin/ci-results-${runner}:RESULT.txt")
+            if ($runner -eq 'macos-latest' -or $status -match 'status=success') { $done = $true; $winner = $runner; break }
+        }
     }
     if ($done) { break }
 }
