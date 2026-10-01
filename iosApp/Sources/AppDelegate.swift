@@ -18,9 +18,23 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         PikSeekIos.shared.start(native: services)
 
         let window = UIWindow(frame: UIScreen.main.bounds)
-        window.rootViewController = PikSeekIos.shared.mainViewController()
+        window.rootViewController = selfTestController() ?? PikSeekIos.shared.mainViewController()
         window.makeKeyAndVisible()
         self.window = window
         return true
+    }
+
+    /// 打包流程在模拟器里带着环境变量 PIKSEEK_SELFTEST 启动：不进正常界面，跑一遍自检，结果写到 Documents/selftest.txt。
+    private func selfTestController() -> UIViewController? {
+        guard ProcessInfo.processInfo.environment["PIKSEEK_SELFTEST"] != nil,
+              let mp4 = Bundle.main.path(forResource: "control-mpeg4-aac", ofType: "mp4"),
+              let wmv = Bundle.main.path(forResource: "wmv2-wmav2", ofType: "wmv")
+        else { return nil }
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return PikSeekIos.shared.selfTestViewController(
+            sample: mp4,
+            otherSample: wmv,
+            resultPath: documents.appendingPathComponent("selftest.txt").path
+        )
     }
 }

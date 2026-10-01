@@ -135,6 +135,14 @@ object PikSeekIos {
         }
     }
 
+    /**
+     * 自检页，见 [IosSelfTestScreen]。[sample] 与 [otherSample] 是随包的两个样片，结果写到 [resultPath]。
+     */
+    fun selfTestViewController(sample: String, otherSample: String, resultPath: String): UIViewController {
+        val current = runtime ?: error("先调 PikSeekIos.start")
+        return ComposeUIViewController { IosSelfTestScreen(current.native, sample, otherSample, resultPath) }
+    }
+
     /** 日志在程序沙盒的 Application Support/PikSeek/logs 下，只留在本机。 */
     private fun installLog(native: NativeServices) {
         PikoLog.install(IosPaths.logs) { level, tag, message, error ->
