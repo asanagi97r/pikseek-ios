@@ -12,3 +12,6 @@
 
 # Windows PowerShell 按 ANSI 读没有 BOM 的脚本：selftest.ps1 存成带 BOM 的 UTF-8，换行用 CRLF
 *.ps1 text eol=crlf
+# Unix scripts must keep LF: the macOS build machine runs them
+gradlew text eol=lf
+*.sh text eol=lf
