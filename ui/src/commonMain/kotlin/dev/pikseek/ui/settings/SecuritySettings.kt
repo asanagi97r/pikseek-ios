@@ -41,6 +41,7 @@ import dev.piko.ui.platform.LocalPikoPlatform
 import dev.piko.ui.screens.settings.SettingsNavigationRow
 import dev.pikseek.auth.AuthStatus
 import dev.pikseek.auth.CredentialPersistence
+import dev.pikseek.auth.CredentialStoreText
 import dev.pikseek.security.HostCategory
 import dev.pikseek.security.NetworkAudit
 import dev.pikseek.security.SecurityReport
@@ -178,7 +179,7 @@ fun SecuritySettingsContent(snackbarHostState: SnackbarHostState, groupTitle: @C
 }
 
 private fun persistenceText(status: AuthStatus): String = when (status.persistence) {
-    CredentialPersistence.Dpapi -> "Windows DPAPI（当前用户）加密后存于数据目录，${status.storedSessions} 个会话"
+    CredentialPersistence.Dpapi -> "${CredentialStoreText.storage}，${status.storedSessions} 个会话"
     CredentialPersistence.MemoryOnly -> "未保存，仅本次运行有效：${status.storeProblem ?: "加密存储不可用"}。不会改用明文"
 }
 
@@ -187,7 +188,7 @@ fun authSection(status: AuthStatus): SecurityReport.Section = SecurityReport.Sec
     "Authentication",
     buildList {
         add("auth implementation" to "PikSeek LocalAuthBroker (independent of Piko credential code)")
-        add("session stored with DPAPI" to if (status.persistence == CredentialPersistence.Dpapi) "Yes" else "No (memory only)")
+        add(CredentialStoreText.reportLabel to if (status.persistence == CredentialPersistence.Dpapi) "Yes" else "No (memory only)")
         status.storeProblem?.let { add("credential store problem" to it) }
         add("plaintext fallback" to "None")
         add("password stored" to "Never")

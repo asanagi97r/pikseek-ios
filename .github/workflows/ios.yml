@@ -81,7 +81,8 @@ jobs:
           cd iosApp
           xcodebuild -project PikSeek.xcodeproj -scheme PikSeek -configuration Debug \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO \
+            -derivedDataPath build ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=- \
             build 2>&1 | tee ../out/build-simulator.full.log | grep -E "error:|warning: unre|BUILD|\*\*" || true
           test -f build/Build/Products/Debug-iphonesimulator/PikSeek.app/PikSeek
 

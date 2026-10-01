@@ -420,7 +420,7 @@ private fun SecurityNote(storeProblem: String?, passwordMode: Boolean) {
             Text(sent, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
             if (problem == null) {
                 Text(
-                    "登录会话经 Windows DPAPI 加密后保存在本机，仅当前 Windows 用户可解。",
+                    dev.pikseek.auth.CredentialStoreText.signInNote,
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.onSurfaceVariant,
                 )
