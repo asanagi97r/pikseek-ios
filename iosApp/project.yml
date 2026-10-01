@@ -1,0 +1,59 @@
+# Xcode 工程由 XcodeGen 从这份文件生成（工程文件本身不进库）：
+#   cd iosApp && xcodegen generate
+name: PikSeek
+options:
+  bundleIdPrefix: dev.pikseek
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+packages:
+  # iOS 上的 libmpv 与 FFmpeg（LGPL 构建）。桌面版用的是 MediaMP 自带的那份；MediaMP 的 mpv 在 iOS 上没有画面输出
+  MPVKit:
+    url: https://github.com/mpvkit/MPVKit.git
+    exactVersion: 1.0.0
+targets:
+  PikSeek:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      # 自检用的样片：一个系统播放器能播的（MP4），一个不能播的（WMV）
+      - path: ../testdata/media/control-mpeg4-aac.mp4
+        buildPhase: resources
+      - path: ../testdata/media/wmv2-wmav2.wmv
+        buildPhase: resources
+    dependencies:
+      - package: MPVKit
+        product: MPVKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.pikseek.ios
+        PRODUCT_NAME: PikSeek
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SWIFT_VERSION: "5.0"
+        ENABLE_BITCODE: "NO"
+        # 包不在这里签名：出的是未签名的 ipa，由用户用 AltStore 加自己的 Apple ID 签
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGN_IDENTITY: ""
+    info:
+      path: Generated/Info.plist
+      properties:
+        CFBundleDisplayName: PikSeek
+        UILaunchScreen: {}
+        UIRequiresFullScreen: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        # 本机回环代理（127.0.0.1）走明文 HTTP：只放开本机回环，别的仍要求 HTTPS
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        ITSAppUsesNonExemptEncryption: false

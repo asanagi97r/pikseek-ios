@@ -1,0 +1,114 @@
+name: iOS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 结果（截图、自检输出、构建日志的要紧部分）推到 ci-results 分支，方便不登录也能取回来看
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Environment
+        run: |
+          mkdir -p out
+          {
+            sw_vers
+            xcodebuild -version
+            swift --version 2>&1 | head -2
+            uname -m
+          } | tee out/environment.txt
+
+      - name: Generate Xcode project
+        run: |
+          which xcodegen || brew install xcodegen
+          cd iosApp && xcodegen generate
+
+      - name: Build for simulator
+        run: |
+          set -o pipefail
+          cd iosApp
+          xcodebuild -project PikSeek.xcodeproj -scheme PikSeek -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee ../out/build-simulator.full.log | grep -E "error:|warning: unre|BUILD|\*\*" || true
+          test -d build/Build/Products/Debug-iphonesimulator/PikSeek.app
+
+      - name: Run in simulator
+        run: |
+          set -x
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)['devices']
+          best = None
+          for runtime in sorted(data, reverse=True):
+              if 'iOS' not in runtime: continue
+              for device in data[runtime]:
+                  if device['name'].startswith('iPhone') and device['isAvailable']:
+                      best = device['udid']; print(runtime, device['name'], file=sys.stderr); break
+              if best: break
+          print(best or '')")
+          test -n "$UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          APP=iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app
+          xcrun simctl install "$UDID" "$APP"
+          for SAMPLE in control-mpeg4-aac.mp4 wmv2-wmav2.wmv; do
+            NAME="${SAMPLE%%.*}"
+            SIMCTL_CHILD_PIKSEEK_PROBE="$SAMPLE" xcrun simctl launch --terminate-running-process "$UDID" dev.pikseek.ios
+            sleep 5
+            xcrun simctl io "$UDID" screenshot "out/probe-$NAME.png"
+            sleep 5
+            DATA=$(xcrun simctl get_app_container "$UDID" dev.pikseek.ios data)
+            cp "$DATA/Documents/probe.json" "out/probe-$NAME.json" || echo "no probe.json for $SAMPLE" > "out/probe-$NAME.json"
+            xcrun simctl terminate "$UDID" dev.pikseek.ios || true
+          done
+          xcrun simctl spawn "$UDID" log show --last 3m --predicate 'process == "PikSeek"' --style compact 2>/dev/null | tail -150 > out/simulator-log.txt || true
+
+      - name: Build for device (unsigned)
+        run: |
+          set -o pipefail
+          cd iosApp
+          xcodebuild -project PikSeek.xcodeproj -scheme PikSeek -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build ARCHS=arm64 CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee ../out/build-device.full.log | grep -E "error:|BUILD|\*\*" || true
+          APP=build/Build/Products/Release-iphoneos/PikSeek.app
+          test -d "$APP"
+          mkdir -p Payload && cp -R "$APP" Payload/
+          zip -qry ../PikSeek-unsigned.ipa Payload
+          ls -l ../PikSeek-unsigned.ipa | tee ../out/ipa.txt
+
+      - name: Upload ipa
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PikSeek-unsigned-ipa
+          path: PikSeek-unsigned.ipa
+          retention-days: 14
+
+      - name: Publish results
+        if: always()
+        run: |
+          for LOG in out/*.full.log; do
+            [ -f "$LOG" ] || continue
+            { grep -nE "error:|fatal|Undefined symbol|ld: |BUILD (SUCCEEDED|FAILED)" "$LOG" | head -150; echo "----- tail -----"; tail -60 "$LOG"; } > "${LOG%.full.log}.log"
+            rm "$LOG"
+          done
+          echo "run=${GITHUB_RUN_NUMBER} sha=${GITHUB_SHA} status=${{ job.status }} at=$(date -u +%FT%TZ)" > out/RESULT.txt
+          cd out
+          git init -q -b ci-results
+          git add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -q -m "run ${GITHUB_RUN_NUMBER} for ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" ci-results
