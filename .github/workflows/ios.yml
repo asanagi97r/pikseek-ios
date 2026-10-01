@@ -55,16 +55,23 @@ jobs:
         id: kotlin
         run: |
           set -o pipefail
-          BUILD=${{ vars.KOTLIN_BUILD_TYPE || 'Debug' }}
-          LOWER=$(echo "$BUILD" | tr '[:upper:]' '[:lower:]')
-          if [ "$(uname -m)" = x86_64 ]; then SIMULATOR=-Ppikseek.deviceOnly=true; else SIMULATOR=; fi
-          bash ./gradlew ":iosKit:assemblePikSeekKit${BUILD}XCFramework" $SIMULATOR \
+          # 模拟器那份用调试构建（链接快），真机那份用发布构建（界面流畅得多），各链接一次，再拼成一个 xcframework
+          DEVICE=iosKit/build/bin/iosArm64/releaseFramework/PikSeekKit.framework
+          SIMULATOR=iosKit/build/bin/iosSimulatorArm64/debugFramework/PikSeekKit.framework
+          if [ "$(uname -m)" = x86_64 ]; then
+            TASKS=":iosKit:linkReleaseFrameworkIosArm64 -Ppikseek.deviceOnly=true"
+            FRAMEWORKS="-framework $DEVICE"
+          else
+            TASKS=":iosKit:linkReleaseFrameworkIosArm64 :iosKit:linkDebugFrameworkIosSimulatorArm64"
+            FRAMEWORKS="-framework $DEVICE -framework $SIMULATOR"
+          fi
+          bash ./gradlew $TASKS \
             "-Porg.gradle.java.installations.paths=$JAVA_HOME" --console=plain \
             2>&1 | tee out/kotlin-ios.full.log | grep -E "^e: |^> Task .*(FAILED)|BUILD|What went wrong" || true
           grep -q "BUILD SUCCESSFUL" out/kotlin-ios.full.log
           mkdir -p iosApp/Frameworks
           rm -rf iosApp/Frameworks/PikSeekKit.xcframework
-          cp -R "iosKit/build/XCFrameworks/$LOWER/PikSeekKit.xcframework" iosApp/Frameworks/
+          xcodebuild -create-xcframework $FRAMEWORKS -output iosApp/Frameworks/PikSeekKit.xcframework
           # Swift 一侧照着这份头文件实现接口：留一份要紧的声明，对不上时好查
           HEADER=$(find iosApp/Frameworks/PikSeekKit.xcframework -name PikSeekKit.h | head -1)
           grep -nE "^@(interface|protocol) |^- |^\+ |^@property" "$HEADER" | grep -nE -A40 "(HttpBridge|KeychainBridge|MpvPlayerBridge|MpvEvents|FrameGrabberBridge|NativeServices|HttpResult|KeychainItem|GrabbedFrame|PikSeekIos)\b" | cut -c1-300 | head -400 > out/kotlin-header.txt || true
@@ -145,6 +152,19 @@ jobs:
           name: PikSeek-unsigned-ipa-${{ matrix.runner }}
           path: PikSeek-unsigned.ipa
           retention-days: 14
+
+      # 未签名的包挂到仓库的 Releases 下（预发布），不登录也能下；装到手机上用 AltStore 加自己的 Apple ID 签
+      - name: Publish ipa
+        if: success() && runner.arch == 'ARM64'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="build-${GITHUB_RUN_NUMBER}"
+          RESULT=$(tail -1 out/selftest.txt 2>/dev/null || echo "no self-test")
+          gh release create "$TAG" PikSeek-unsigned.ipa --prerelease --target "$GITHUB_SHA" \
+            --title "PikSeek iOS build ${GITHUB_RUN_NUMBER}" \
+            --notes "Unsigned ipa built from ${GITHUB_SHA}. Simulator self-test: ${RESULT}. Sign it yourself (AltStore / Sideloadly) to install."
+          echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/PikSeek-unsigned.ipa" | tee out/ipa-url.txt
 
       - name: Publish results
         if: always()
