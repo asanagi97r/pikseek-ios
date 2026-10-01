@@ -1,0 +1,27 @@
+{
+  "audioCodec" : "Windows Media Audio 2",
+  "currentVo" : "gpu-next",
+  "drawableSize" : "1206x2622",
+  "duration" : 4.0460000000000003,
+  "estimatedVfFps" : 24.999999999999989,
+  "ffmpegVersion" : "n8.1.2",
+  "frameDropCount" : "0",
+  "gpuContext" : "moltenvk",
+  "headlessDuration" : 4.0460000000000003,
+  "headlessLogs" : [
+
+  ],
+  "headlessWidth" : "176",
+  "height" : "144",
+  "hwdecCurrent" : "no",
+  "logs" : [
+
+  ],
+  "mpvVersion" : "mpv v0.41.0-dirty",
+  "sample" : "wmv2-wmav2.wmv",
+  "timePosAt2_5s" : 1.8860000000000001,
+  "timePosAt6s" : 1.486,
+  "videoCodec" : "Windows Media Video 8",
+  "voConfigured" : true,
+  "width" : "176"
+}

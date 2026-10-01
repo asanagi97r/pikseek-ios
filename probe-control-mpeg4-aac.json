@@ -1,0 +1,27 @@
+{
+  "audioCodec" : "AAC (Advanced Audio Coding)",
+  "currentVo" : "gpu-next",
+  "drawableSize" : "1206x2622",
+  "duration" : 4,
+  "estimatedVfFps" : 25,
+  "ffmpegVersion" : "n8.1.2",
+  "frameDropCount" : "0",
+  "gpuContext" : "moltenvk",
+  "headlessDuration" : 4,
+  "headlessLogs" : [
+
+  ],
+  "headlessWidth" : "176",
+  "height" : "144",
+  "hwdecCurrent" : "no",
+  "logs" : [
+    "[vo\/gpu-next\/libplacebo] warn: Spent 2962.690 ms creating vulkan device (slow!)"
+  ],
+  "mpvVersion" : "mpv v0.41.0-dirty",
+  "sample" : "control-mpeg4-aac.mp4",
+  "timePosAt2_5s" : 0,
+  "timePosAt6s" : 0,
+  "videoCodec" : "MPEG-4 part 2",
+  "voConfigured" : true,
+  "width" : "176"
+}

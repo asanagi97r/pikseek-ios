@@ -1,0 +1,150 @@
+2026-10-01 14:57:21.484 Df PikSeek[13289:a087] [com.apple.UIKit:KeyWindow] UIWindowScene: 0x1050542c0: Window became key in scene: UIWindow: 0x1059c8000; contextId: 0x43396B25: reason: UIWindowScene: 0x1050542c0: Window requested to become key in scene: 0x1059c8000
+2026-10-01 14:57:21.485 Df PikSeek[13289:a087] [com.apple.UIKit:KeyWindow] Key window needs update: 1; currentKeyWindowScene: 0x0; evaluatedKeyWindowScene: 0x1050542c0; currentApplicationKeyWindow: 0x0; evaluatedApplicationKeyWindow: 0x1059c8000; reason: UIWindowScene: 0x1050542c0: Window requested to become key in scene: 0x1059c8000
+2026-10-01 14:57:21.485 Df PikSeek[13289:a087] [com.apple.UIKit:KeyWindow] Window did become application key: UIWindow: 0x1059c8000; contextId: 0x43396B25; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Adev.pikseek.ios-default
+2026-10-01 14:57:21.485 Df PikSeek[13289:a087] [com.apple.UIKit:EventDeferring] [0x105a64ee0] Begin local event deferring requested for token: 0x105848cc0; environments: 1; reason: UIWindowScene: 0x1050542c0: Begin event deferring in keyboardFocus for window: 0x1059c8000
+2026-10-01 14:57:21.488 Df PikSeek[13289:a087] [com.apple.UIKit:Application] Deactivation reason removed: 10; deactivation reasons: 3104 -> 2080; animating application lifecycle event: 1
+2026-10-01 14:57:21.489 Df PikSeek[13289:a087] [com.apple.UIKit:Application] Deactivation reason added: 12; deactivation reasons: 2080 -> 6176; animating application lifecycle event: 1
+2026-10-01 14:57:21.489 Df PikSeek[13289:a087] [com.apple.UIKit:Application] Deactivation reason removed: 11; deactivation reasons: 6176 -> 4128; animating application lifecycle event: 1
+2026-10-01 14:57:21.491 Df PikSeek[13289:a098] [com.apple.BackBoard:EventDelivery] BKSHIDEventDeliveryManager - connection activation
+2026-10-01 14:57:21.493 Df PikSeek[13289:a087] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneIntelligenceSupportSettings> on FBSSceneSettings
+2026-10-01 14:57:21.497 Df PikSeek[13289:a087] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1050542c0> (77E33ECC-4BE6-4232-8985-5809F6C38324)
+2026-10-01 14:57:21.507 Df PikSeek[13289:a087] [com.apple.xpc:connection] [0x1064a4280] activating connection: mach=true listener=false peer=false name=com.apple.lsd.mapdb
+2026-10-01 14:57:21.532 Df PikSeek[13289:a087] [com.apple.network:activity] Create activity from XPC object <nw_activity 50:1 [5D5F63CE-268E-4F43-A7F0-A5FFD7428D4E] (reporting strategy default)>
+2026-10-01 14:57:21.532 Df PikSeek[13289:a087] [com.apple.network:activity] Create activity from XPC object <nw_activity 50:2 [61D5B545-9695-43FB-BEDC-612BE1EFA02E] (reporting strategy default)>
+2026-10-01 14:57:21.532 Df PikSeek[13289:a087] [com.apple.network:activity] Set activity <nw_activity 50:1 [5D5F63CE-268E-4F43-A7F0-A5FFD7428D4E] (reporting strategy default)> as the global parent
+2026-10-01 14:57:21.532 Df PikSeek[13289:a096] [com.apple.UIIntelligenceSupport:xpc] establishing connection to agent
+2026-10-01 14:57:21.532 Df PikSeek[13289:a087] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 1
+2026-10-01 14:57:21.533 Df PikSeek[13289:a087] [com.apple.UIKit:BackgroundTask] Ending task with identifier 1 and description: <_UIBackgroundTaskInfo: 0x105898980>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 540 (elapsed = 1), _expireHandler: (null)
+2026-10-01 14:57:21.533 Df PikSeek[13289:a087] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x105050100> (used by background task with identifier 1: <_UIBackgroundTaskInfo: 0x105898980>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 540 (elapsed = 1))
+2026-10-01 14:57:21.534 Df PikSeek[13289:a087] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x105050100> for task identifier: 1
+2026-10-01 14:57:21.535 Df PikSeek[13289:a087] [com.apple.UIKit:EventBus] Event Timing Profile for Touch: not found, path="/System/Library/EventTimingProfiles/Sim.Touch.plist"
+2026-10-01 14:57:21.535 Df PikSeek[13289:a087] [com.apple.UIKit:EventBus] Event Timing Profile for Pencil: not found, path="/System/Library/EventTimingProfiles/Sim.Pencil.plist"
+2026-10-01 14:57:21.536 Df PikSeek[13289:a087] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:dev.pikseek.ios-default  persistentID: 77E33ECC-4BE6-4232-8985-5809F6C38324
+2026-10-01 14:57:21.537 Df PikSeek[13289:a087] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1050542c0> (77E33ECC-4BE6-4232-8985-5809F6C38324)
+2026-10-01 14:57:21.537 Df PikSeek[13289:a087] [com.apple.UIKit:UpdateScheduler] Target list changed: <CADisplay:LCD PurpleMain>
+2026-10-01 14:57:21.538 Df PikSeek[13289:a087] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1050542c0> (77E33ECC-4BE6-4232-8985-5809F6C38324)
+2026-10-01 14:57:21.538 Df PikSeek[13289:a087] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:dev.pikseek.ios-default  persistentID: 77E33ECC-4BE6-4232-8985-5809F6C38324
+2026-10-01 14:57:21.538 Df PikSeek[13289:a087] [com.apple.UIKit:Application] Deactivation reason removed: 12; deactivation reasons: 4128 -> 32; animating application lifecycle event: 1
+2026-10-01 14:57:21.538 Df PikSeek[13289:a087] [com.apple.KeyboardArbiter:Client] Send setDeactivating: N (-DeactivationReason:SuspendedEventsOnly)
+2026-10-01 14:57:21.539 Df PikSeek[13289:a087] [com.apple.UIKit:Application] Deactivation reason removed: 5; deactivation reasons: 32 -> 0; animating application lifecycle event: 0
+2026-10-01 14:57:21.540 Df PikSeek[13289:a087] [com.apple.KeyboardArbiter:Client] startConnection
+2026-10-01 14:57:21.540 Df PikSeek[13289:a087] [com.apple.KeyboardArbiter:Client] handleKeyboardChange: set currentKeyboard:N (wasKeyboard:N)
+2026-10-01 14:57:21.545 Df PikSeek[13289:a096] [com.apple.xpc:session] [0x106558960] Session created.
+2026-10-01 14:57:21.545 Df PikSeek[13289:a096] [com.apple.xpc:session] [0x106558960] Session created from connection [0x1064a4780]
+2026-10-01 14:57:21.547 Sd PikSeek[13289:0] (21AB2359-DEEC-3444-94FE-B7257E43BE34) IOHIDManager State
+{
+    DispatchQueue = 0;
+    RunLoop = 1;
+    createOptions = 0;
+    isOpen = 0;
+    openOptions = 0;
+}
+2026-10-01 14:57:21.553 Df PikSeek[13289:a087] [com.apple.UIKit:KeyboardSceneDelegate] forceReloadInputViews
+2026-10-01 14:57:21.553 Df PikSeek[13289:a087] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for key-window scene responder: <(null): 0x0; > force:Y
+2026-10-01 14:57:21.555 Df PikSeek[13289:a087] [com.apple.UIKit:KeyboardArbiterClientLog] isWritingToolsHandlingKeyboardTracking:Y (WT ready:Y, Arbiter ready:Y)
+2026-10-01 14:57:21.557 Df PikSeek[13289:a096] [com.apple.xpc:connection] [0x1064a4780] activating connection: mach=true listener=false peer=false name=com.apple.uiintelligencesupport.agent
+2026-10-01 14:57:21.558 Df PikSeek[13289:a096] [com.apple.xpc:session] [0x106558960] Session activated
+2026-10-01 14:57:21.563 A  PikSeek[13289:a096] (RunningBoardServices) didChangeInheritances
+2026-10-01 14:57:21.563 Df PikSeek[13289:a096] [com.apple.BackBoard:EventDelivery] policyStatus:<BKSHIDEventDeliveryPolicyObserver: 0x105849440; token: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Adev.pikseek.ios-default; status: ancestor> was:target
+2026-10-01 14:57:21.564 Df PikSeek[13289:a087] [com.apple.UIKit:EventDeferring] [0x105a64ee0] Scene target of event deferring environments did update: scene: 0x1050542c0; current systemShellManagesKeyboardFocus: 1; systemShellManagesKeyboardFocusForScene: 1; eligibleForRecordRemoval: 1;
+2026-10-01 14:57:21.564 Df PikSeek[13289:a087] [com.apple.UIKit:KeyWindow] Scene became target of keyboard event deferring environment: UIWindowScene: 0x1050542c0; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Adev.pikseek.ios-default
+2026-10-01 14:57:21.601 Df PikSeek[13289:a087] [com.apple.network:activity] <nw_activity 50:1 [5D5F63CE-268E-4F43-A7F0-A5FFD7428D4E] (global parent) (reporting strategy default) complete (reason success)> complete with reason 2 (success), duration 827ms
+2026-10-01 14:57:21.603 Df PikSeek[13289:a087] [com.apple.network:activity] <nw_activity 50:2 [61D5B545-9695-43FB-BEDC-612BE1EFA02E] (reporting strategy default) complete (reason success)> complete with reason 2 (success), duration 829ms
+2026-10-01 14:57:21.603 Df PikSeek[13289:a087] [com.apple.network:activity] Unsetting the global parent activity <nw_activity 50:1 [5D5F63CE-268E-4F43-A7F0-A5FFD7428D4E] (global parent) (reporting strategy default) complete (reason success)>
+2026-10-01 14:57:21.603 Df PikSeek[13289:a087] [com.apple.network:activity] Unset the global parent activity
+2026-10-01 14:57:21.603 Df PikSeek[13289:a087] [com.apple.app_launch_measurement:ApplicationLaunch] alm_release_pageins_recording_assertion: releasing pageins recording assertion
+2026-10-01 14:57:21.675 Df PikSeek[13289:a09d] [com.apple.audio.caulk:alloc] Registered notify signal com.apple.caulk.alloc.rtdump (0)
+2026-10-01 14:57:21.757 Df PikSeek[13289:a09d] (CoreAudio)   HALPlugInManagement.cpp:443    HALPlugInManagement::RegisterPlugIns: loading in-process plug-ins
+2026-10-01 14:57:21.757 E  PikSeek[13289:a09d] [com.apple.CFBundle:plugin] AddInstanceForFactory: No factory registered for id <CFUUID 0x1066548c0> F8BB1C28-BAE8-11D6-9C31-00039315CD46
+2026-10-01 14:57:21.795 Df PikSeek[13289:a09d] [com.apple.coreaudio:as_client] AVAudioSessionImpl_Simulator.mm:111   Set volume on device 81 to 0.60
+2026-10-01 14:57:21.795 Df PikSeek[13289:a09d] [com.apple.coreaudio:as_client] AVAudioSessionImpl_Simulator.mm:111   Set volume on device 81 to 0.60
+2026-10-01 14:57:21.795 Df PikSeek[13289:a09d] [com.apple.coreaudio:ddagg]        AggregateDevice.mm:887   Creating DefaultDeviceAggregate
+2026-10-01 14:57:21.811 Df PikSeek[13289:a09d] [com.apple.coreaudio:ddagg]        AggregateDevice.mm:688   Built valid aggregate 110
+2026-10-01 14:57:21.811 Df PikSeek[13289:a09d] [com.apple.coreaudio:ddagg]        AggregateDevice.mm:1008  PrimarySessionActiveWithInputEnabled 0 -> 0
+2026-10-01 14:57:21.836 Df PikSeek[13289:a087] [com.apple.Accessibility:AXCommon] Read Per-App on Init: Smart invert = (null)
+2026-10-01 14:57:21.847 Df PikSeek[13289:a09d] [com.apple.extensionkit:NSExtension] Class EXGetExtensionClass(void) returning EXConcreteExtension
+2026-10-01 14:57:21.848 Df PikSeek[13289:a09d] [com.apple.xpc:connection] [0x1064a4000] activating connection: mach=true listener=false peer=false name=com.apple.pluginkit.pkd
+2026-10-01 14:57:21.848 A  PikSeek[13289:a09d] (PlugInKit) continuous-discovery
+2026-10-01 14:57:21.848 Df PikSeek[13289:a09d] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x1058495c0> created discovery driver
+2026-10-01 14:57:21.848 Df PikSeek[13289:a09d] [com.apple.PlugInKit:discovery] [d 2B2278A9-1E75-47E4-89B4-23F050C47E92] <PKHost:0x105a63780> Beginning discovery for flags: 0, point: com.apple.AudioUnit
+2026-10-01 14:57:21.854 Df PikSeek[13289:a093] [com.apple.PlugInKit:discovery] [d 2B2278A9-1E75-47E4-89B4-23F050C47E92] <PKHost:0x105a63780> Completed discovery. Final # of matches: 0
+2026-10-01 14:57:21.855 Df PikSeek[13289:a093] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x1058495c0> delivering update to host (0 plugins)
+2026-10-01 14:57:21.855 A  PikSeek[13289:a093] (ExtensionFoundation) discovering extensions
+2026-10-01 14:57:21.855 Df PikSeek[13289:a093] [com.apple.extensionkit:NSExtension] discovered extensions: attributes {
+    NSExtensionPointName = "com.apple.AudioUnit";
+}, extensionSet {(
+)}
+2026-10-01 14:57:21.855 Df PikSeek[13289:a093] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x1058495c0> installing watchers for continuous discovery
+2026-10-01 14:57:21.855 Df PikSeek[13289:a093] [com.apple.launchservices:appinstallation] registering for distributed notification com.apple.LaunchServices.pluginsregistered in this process
+2026-10-01 14:57:21.855 Df PikSeek[13289:a093] [com.apple.xpc:connection] [0x1064a43c0] activating connection: mach=true listener=false peer=false name=com.apple.distributed_notifications@1v3
+2026-10-01 14:57:21.855 Df PikSeek[13289:a093] [com.apple.launchservices:appinstallation] registering for distributed notification com.apple.LaunchServices.pluginsunregistered in this process
+2026-10-01 14:57:21.856 A  PikSeek[13289:a09d] (PlugInKit) continuous-discovery
+2026-10-01 14:57:21.862 Df PikSeek[13289:a09d] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x10584a9a0> created discovery driver
+2026-10-01 14:57:21.862 Df PikSeek[13289:a09d] [com.apple.PlugInKit:discovery] [d 59D70A39-6E09-42A4-BC5D-4235F1C08174] <PKHost:0x105a63780> Beginning discovery for flags: 0, point: com.apple.AudioUnit-UI
+2026-10-01 14:57:21.862 Df PikSeek[13289:a093] [com.apple.launchservices:progress] Establishing xpc connection to lsd
+2026-10-01 14:57:21.862 Df PikSeek[13289:a093] [com.apple.xpc:connection] [0x1064a4140] activating connection: mach=true listener=false peer=false name=com.apple.lsd.xpc
+2026-10-01 14:57:21.863 Df PikSeek[13289:a09a] [com.apple.launchservices:progress] Received LSWorkspaceObserverPing, xpc connection established
+2026-10-01 14:57:21.864 Df PikSeek[13289:a09a] [com.apple.PlugInKit:discovery] [d 59D70A39-6E09-42A4-BC5D-4235F1C08174] <PKHost:0x105a63780> Completed discovery. Final # of matches: 0
+2026-10-01 14:57:21.864 Df PikSeek[13289:a09a] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x10584a9a0> delivering update to host (0 plugins)
+2026-10-01 14:57:21.864 A  PikSeek[13289:a09a] (ExtensionFoundation) discovering extensions
+2026-10-01 14:57:21.864 Df PikSeek[13289:a09a] [com.apple.extensionkit:NSExtension] discovered extensions: attributes {
+    NSExtensionPointName = "com.apple.AudioUnit-UI";
+}, extensionSet {(
+)}
+2026-10-01 14:57:21.864 Df PikSeek[13289:a09a] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x10584a9a0> installing watchers for continuous discovery
+2026-10-01 14:57:21.864 A  PikSeek[13289:a09d] (PlugInKit) continuous-discovery
+2026-10-01 14:57:21.864 Df PikSeek[13289:a09d] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x10584aca0> created discovery driver
+2026-10-01 14:57:21.865 Df PikSeek[13289:a09d] [com.apple.PlugInKit:discovery] [d D6A2AF5A-D112-43AD-A3A6-C2B8B9F9BC00] <PKHost:0x105a63780> Beginning discovery for flags: 0, point: com.apple.AudioUnit-Speech
+2026-10-01 14:57:21.870 Df PikSeek[13289:a093] [com.apple.PlugInKit:discovery] [d D6A2AF5A-D112-43AD-A3A6-C2B8B9F9BC00] <PKHost:0x105a63780> Completed discovery. Final # of matches: 4
+2026-10-01 14:57:21.870 Df PikSeek[13289:a09a] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x10584aca0> delivering update to host (4 plugins)
+2026-10-01 14:57:21.870 A  PikSeek[13289:a09a] (ExtensionFoundation) discovering extensions
+2026-10-01 14:57:21.872 Df PikSeek[13289:a09a] [com.apple.extensionkit:NSExtension] discovered extensions: attributes {
+    NSExtensionPointName = "com.apple.AudioUnit-Speech";
+}, extensionSet {(
+    <EXConcreteExtension: 0x1059c4fc0> {id = com.apple.texttospeech.SiriAUSP},
+    <EXConcreteExtension: 0x1059c4c40> {id = com.apple.ax.KonaTTSSupport.KonaSynthesizer},
+    <EXConcreteExtension: 0x1066fc000> {id = com.apple.speech.MacinTalkFramework.MacinTalkAUSP},
+    <EXConcreteExtension: 0x1066fc0e0> {id = com.apple.ax.MauiTTSSupport.MauiAUSP}
+)}
+2026-10-01 14:57:21.872 Df PikSeek[13289:a09a] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x10584aca0> installing watchers for continuous discovery
+2026-10-01 14:57:21.886 Df PikSeek[13289:a09d] [com.apple.coreaudio:aurioc]            AURemoteIO.cpp:1130  AURemoteIO@0x1065b7640: set kAudioOutputUnitProperty_OutputChannelLayout.  Layout = tag=0x0, 0 channel descriptions [], err = 0
+2026-10-01 14:57:21.890 Df PikSeek[13289:a093] [com.apple.coreaudio:aqme]           AQMixEngine.cpp:735   AQMEDevice (0x1066e1b58) has neither a defaultOutStreamClient nor a defaultInStreamClient
+2026-10-01 14:57:21.890 Df PikSeek[13289:a093] [com.apple.coreaudio:EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:244   EnhanceDialogueProcessor() - Product does not support Enhance Dialogue
+2026-10-01 14:57:21.890 Df PikSeek[13289:a093] [com.apple.coreaudio:EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:244   EnhanceDialogueProcessor() - Product does not support Enhance Dialogue
+2026-10-01 14:57:21.890 Df PikSeek[13289:a093] [com.apple.coreaudio:AudioConverter]        ACv2Workarounds.mm:51    dev.pikseek.ios: fix84702776_86723525_86479548_89800354_SinglePacketDesc: false
+2026-10-01 14:57:21.891 Df PikSeek[13289:a093] [com.apple.audio.caulk:alloc] Registered notify signal com.apple.caulk.alloc.audiodump (0)
+2026-10-01 14:57:21.891 Df PikSeek[13289:a093] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0x105852df0, from  2 ch,  48000 Hz, Float32, deinterleaved to  2 ch,  48000 Hz, Float32, interleaved
+2026-10-01 14:57:21.895 Df PikSeek[13289:a09a] [com.apple.coreaudio:SpatialMgr] SpatializationManager.cpp:1461  Could not load preset file, invalid model/product name!
+2026-10-01 14:57:21.895 Df PikSeek[13289:a09a] [com.apple.coreaudio:aqme]        MEMixerChannel.cpp:3273  2-channel audiovisual content is NOT eligible for spatialization
+2026-10-01 14:57:21.895 Df PikSeek[13289:a09a] [com.apple.coreaudio:aqme]  MEDeviceStreamClient.cpp:245   AQME Default-InputOutput: client starting: <CA_UISoundClientBase@0x1066a8e00>; running count now 1
+2026-10-01 14:57:21.895 Df PikSeek[13289:a09a] [com.apple.coreaudio:aqme]            AQMEIO_HAL.cpp:2857  FetchAndLogFrameSize starting IO deviceID=110, frame size is 512
+2026-10-01 14:57:21.906 Df PikSeek[13289:a09a] [com.apple.coreaudio:aqme]            AQMEIO_HAL.cpp:2826  aqmeio@0x1066a5818, device 110 (iOSSimulatorAudioDevice-13289-0), AudioDeviceStart (err 0)
+2026-10-01 14:57:21.917 Df PikSeek[13289:a09a] [com.apple.coreaudio:aqme]              AQIONode.cpp:744   client <RemoteIOClient@0x1066a5200(@0x1066a5418); output; [13289]> is NOT Now Playing eligible
+2026-10-01 14:57:21.918 Df PikSeek[13289:a09a] [com.apple.coreaudio:aurios]        RemoteIOServer.cpp:1888  rio@0x1066a5418 spatialization disabled.  layout = tag=0x0, 0 channel descriptions [], format =  2 ch,      0 Hz, Float32, deinterleaved
+2026-10-01 14:57:21.923 Df PikSeek[13289:a09a] [com.apple.coreaudio:aqme]          RemoteIOServer.h:101   rio@0x1066a5200 Got output layout from io node or spatialized client: tag=0x0, 2 channel descriptions [L, R]
+2026-10-01 14:57:21.923 Df PikSeek[13289:a09a] [com.apple.coreaudio:aurios]        RemoteIOServer.cpp:1597  SetLoudnessFromLM(): ->
+2026-10-01 14:57:21.924 Df PikSeek[13289:a09a] [com.apple.coreaudio:aurios]        RemoteIOServer.cpp:1636  SetLoudnessFromLM(): is CoreAudioServices/LoudnessManager enabled? yes
+2026-10-01 14:57:21.924 Df PikSeek[13289:a09a] [com.apple.coreaudio:aurios]        RemoteIOServer.cpp:1639  SetLoudnessFromLM(): is CoreAudioServices/LoudnessManagerV2 enabled? yes
+2026-10-01 14:57:21.924 Df PikSeek[13289:a09a] [com.apple.coreaudio:aurios]        RemoteIOServer.cpp:1642  SetLoudnessFromLM(): is CoreAudioServices/lm-disable-hardware-check on? no
+2026-10-01 14:57:21.924 Df PikSeek[13289:a09a] [com.apple.coreaudio:aurios]        RemoteIOServer.cpp:1645  SetLoudnessFromLM(): is hardware supported? no
+2026-10-01 14:57:21.924 Df PikSeek[13289:a09a] [com.apple.coreaudio:aurios]        RemoteIOServer.cpp:1657  SetLoudnessFromLM(): hardware not supported, Loudness Manager disabled
+2026-10-01 14:57:21.924 Df PikSeek[13289:a09d] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0x105853720, from  2 ch,      0 Hz, Float32, deinterleaved to  2 ch,  48000 Hz, Float32, deinterleaved
+2026-10-01 14:57:21.925 Df PikSeek[13289:a09d] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1327  AudioConverter -> 0x105853720: The in-process GetProperty call returned 1886547824 for property 1936876385 with size 4.
+2026-10-01 14:57:21.925 Df PikSeek[13289:a09d] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1327  AudioConverter -> 0x105853720: The in-process GetProperty call returned 1886547824 for property 1936876401 with size 4.
+2026-10-01 14:57:21.925 Df PikSeek[13289:a09d] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1327  AudioConverter -> 0x105853720: The in-process GetProperty call returned 1886547824 for property 1886546285 with size 8.
+2026-10-01 14:57:21.925 Df PikSeek[13289:a0c2] [com.apple.coreaudio:AudioConverter] AudioConverter -> 0x105853720: The in-process SetProperty call returned 1886547824 for property 1886547309 with size 4.
+2026-10-01 14:57:21.925 Df PikSeek[13289:a09d] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1077  Created a new in process converter -> 0x105853720, from  2 ch,  44100 Hz, Float32, deinterleaved to  2 ch,  48000 Hz, Float32, deinterleaved
+2026-10-01 14:57:21.925 Df PikSeek[13289:a09d] [com.apple.coreaudio:AudioConverter]        AudioConverter.cpp:1327  AudioConverter -> 0x105853720: The in-process GetProperty call returned 1886547824 for property 1936876385 with size 4.
+2026-10-01 14:57:22.214 Df PikSeek[13289:a0a9] [com.apple.xpc:connection] [0x1064a4dc0] activating connection: mach=true listener=false peer=false name=com.apple.IOSurface.Remote
+2026-10-01 14:57:22.260 Df PikSeek[13289:a09d] [com.apple.coreaudio:aurioc]            AURemoteIO.cpp:1666  Starting AURemoteIO(0x1065b7640)
+output client:  2 ch,  44100 Hz, Float32, deinterleaved, output HW:  2 ch,  48000 Hz, Float32, deinterleaved
+input client:   2 ch,      0 Hz, Float32, deinterleaved, input HW:   2 ch,      0 Hz, Float32, deinterleaved
+2026-10-01 14:57:22.260 Df PikSeek[13289:a093] [com.apple.coreaudio:aqme]            AQMEIO_HAL.cpp:1087  fetched workgroup 0x105899300
+2026-10-01 14:57:22.260 Df PikSeek[13289:a093] [com.apple.coreaudio:auext]        AUOOPWorkgroups.mm:30    AUOOPWorkgroupManager: AddRemoteIOWorkgroup called with token 54431747.
+2026-10-01 14:57:22.260 Df PikSeek[13289:a093] [com.apple.coreaudio:auext]        AUOOPWorkgroups.mm:66    AUOOPWorkgroupManager: mutating workgroups.
+2026-10-01 14:57:22.260 Df PikSeek[13289:a09d] [com.apple.coreaudio:aurioc]            AURemoteIO.cpp:1727  workgroup port 0x14e03
+2026-10-01 14:57:22.261 Df PikSeek[13289:a0f5] [com.apple.coreaudio:auext]        AUOOPWorkgroups.mm:30    AUOOPWorkgroupManager: AddRemoteIOWorkgroup called with token 54431746.
+2026-10-01 14:57:22.261 Df PikSeek[13289:a0f5] [com.apple.coreaudio:auext]        AUOOPWorkgroups.mm:66    AUOOPWorkgroupManager: mutating workgroups.
+2026-10-01 14:57:22.261 Df PikSeek[13289:a093] [com.apple.coreaudio:aqme]              AQIONode.cpp:744   client <RemoteIOClient@0x1066a5200(@0x1066a5418); output; [13289]> is NOT Now Playing eligible
+2026-10-01 14:57:22.261 Df PikSeek[13289:a093] [com.apple.coreaudio:aqme]  MEDeviceStreamClient.cpp:245   AQME Default-InputOutput: client starting: <RemoteIOClient@0x1066a5200(@0x1066a5418); output; [13289]>; running count now 2
+2026-10-01 14:57:22.443 A  PikSeek[13289:a09a] (RunningBoardServices) didChangeInheritances
