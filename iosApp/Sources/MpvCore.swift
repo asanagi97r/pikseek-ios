@@ -181,7 +181,8 @@ final class MpvCore {
     /// `screenshot-raw video`：解码器眼下交出来的那一帧，bgr0。没有画面时为 nil。
     func screenshotRaw() -> (width: Int32, height: Int32, stride: Int32, data: Data)? {
         guard let mpv = current() else { return nil }
-        var pointers: [UnsafePointer<CChar>?] = ["screenshot-raw", "video"].map { UnsafePointer(strdup($0)) }
+        let arguments: [String] = ["screenshot-raw", "video"]
+        var pointers: [UnsafePointer<CChar>?] = arguments.map { UnsafePointer(strdup($0)) }
         pointers.append(nil)
         defer { for pointer in pointers { free(UnsafeMutablePointer(mutating: pointer)) } }
         var result = mpv_node()
