@@ -34,6 +34,7 @@ import dev.pikseek.security.collectSecurityFacts
 import dev.pikseek.thumbnail.IosThumbnailPlatform
 import dev.pikseek.thumbnail.MediaFingerprint
 import dev.pikseek.thumbnail.PreviewDensity
+import dev.pikseek.thumbnail.PreviewPackName
 import dev.pikseek.thumbnail.SeekingSource
 import dev.pikseek.thumbnail.ThumbnailCache
 import dev.pikseek.thumbnail.ThumbnailEngine
@@ -61,6 +62,8 @@ internal fun IosSelfTestScreen(native: NativeServices, sample: String, otherSamp
 
     LaunchedEffect(Unit) {
         var failed = 0
+        // 「时间轴预览」做好的那个视频，「预览缓存」一项拿它打包
+        var timelineFingerprint: MediaFingerprint? = null
 
         suspend fun step(name: String, block: suspend () -> String) {
             val outcome = runCatching { block() }
@@ -156,6 +159,7 @@ internal fun IosSelfTestScreen(native: NativeServices, sample: String, otherSamp
                 grabber.durationMs / 1000 * 1000
             }
             val fingerprint = MediaFingerprint("selftest", "", IosFiles.length(sample), duration)
+            timelineFingerprint = fingerprint
             val idle = MutableStateFlow(false)
             val one = MutableStateFlow(1)
             val session = ThumbnailEngine(cache).open(fingerprint, PreviewDensity.Medium, { listOf(SeekingSource(sample, grabber, "本机文件")) }, { 0L }, idle, one)
@@ -174,6 +178,26 @@ internal fun IosSelfTestScreen(native: NativeServices, sample: String, otherSamp
                 "generated=${progress.fullDone}/${progress.fullTotal} fromCache=${reloaded.fromCache}"
             }
             "frames=${progress.fullDone}/${progress.fullTotal} frame=${middle.width}x${middle.height} cacheBytes=${progress.cacheBytes} reloadedFromCache=${reloaded.fromCache} source=${reloaded.source}"
+        }
+
+        // 预览缓存（存到网盘上的那种）：上一项做好的预览打成包，解进另一台「设备」的缓存，按设置里别的档次打开也直接用它
+        step("preview pack") {
+            val original = timelineFingerprint ?: error("上一项没做成")
+            val stored = ThumbnailCache("${IosPaths.temp}/selftest-thumbnails", WebpSpriteCodec)
+            val pack = stored.exportPack(original) ?: error("打不出包")
+            val other = ThumbnailCache("${IosPaths.temp}/selftest-thumbnails-other", WebpSpriteCodec)
+            other.clear()
+            val elsewhere = MediaFingerprint("another-device", "ABCDEF0123456789ABCDEF0123456789ABCDEF01", 1, original.durationMs)
+            val imported = other.importPack(elsewhere, pack) ?: error("解不开包")
+            val idle = MutableStateFlow(false)
+            val one = MutableStateFlow(1)
+            val session = ThumbnailEngine(other).open(elsewhere, PreviewDensity.High, { error("包里齐全时不该要来源") }, { 0L }, idle, one)
+            withTimeoutOrNull(20_000) { session.join() } ?: error("从包里打开没做完")
+            val fromPack = session.progress.value.fromCache
+            session.close()
+            val name = PreviewPackName(elsewhere.contentHash, PreviewDensity.Medium, imported.frameCount, imported.slotCount)
+            check(fromPack == imported.slotCount && PreviewPackName.parse(name.fileName) == name) { "fromPack=$fromPack slots=${imported.slotCount}" }
+            "packBytes=${pack.size} frames=${imported.frameCount}/${imported.slotCount} openedFromPack=$fromPack name=${name.fileName.takeLast(24)}"
         }
 
         lines += if (failed == 0) "ALL PASS" else "FAILED $failed"

@@ -45,6 +45,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import dev.pikseek.ui.PreviewPackControl
+import dev.pikseek.ui.preview.CloudPack
+import dev.pikseek.ui.preview.PreviewCacheRequest
+import dev.pikseek.ui.preview.PreviewJobsState
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 
@@ -83,6 +88,14 @@ class PikSeekScreensTest {
             override suspend fun totalBytes(): Long = 37L * 1024 * 1024
             override suspend fun clear(): Long = 0
             override suspend fun trim(limitBytes: Long) = Unit
+        },
+        object : PreviewPackControl {
+            override val packs = MutableStateFlow(emptyMap<String, CloudPack>())
+            override val live = MutableStateFlow(emptyMap<String, Float>())
+            override val jobs = MutableStateFlow(PreviewJobsState())
+            override fun refresh() = Unit
+            override fun start(request: PreviewCacheRequest) = Unit
+            override fun cancel() = Unit
         },
     )
 

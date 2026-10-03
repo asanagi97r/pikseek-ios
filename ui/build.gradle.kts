@@ -43,6 +43,8 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            // 预览缓存的任务队列在界面线程与后台之间共用，要一把各平台都有的锁
+            implementation(libs.kotlinx.atomicfu)
         }
     }
 }

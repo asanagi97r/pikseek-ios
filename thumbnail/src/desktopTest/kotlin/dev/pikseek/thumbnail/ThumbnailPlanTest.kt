@@ -113,6 +113,8 @@ class ThumbnailFrameTest {
         val replaced = MediaFingerprint("file-1", "GCID", 1001, 60_000)
         assertEquals(a.cacheKey(), moved.cacheKey())
         assertTrue(a.cacheKey() != replaced.cacheKey())
+        // 各处读出的时长差一两秒，仍是同一个视频；gcid 大小写不同也是
+        assertEquals(a.cacheKey(), MediaFingerprint("file-3", "gcid", 1000, 61_000).cacheKey())
         // 没有内容哈希（本机文件）时按文件标识
         assertTrue(MediaFingerprint("x", "", 1, 1).cacheKey() != MediaFingerprint("y", "", 1, 1).cacheKey())
         assertEquals(32, a.cacheKey().length)

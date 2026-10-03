@@ -73,6 +73,11 @@ import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material.icons.outlined.UploadFile
+import androidx.compose.material.icons.outlined.Preview
+import dev.pikseek.ui.LocalPreviewPacks
+import dev.pikseek.ui.preview.PreviewCacheButton
+import dev.pikseek.ui.preview.PreviewCacheDialog
+import dev.pikseek.ui.preview.PreviewCacheTarget
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButtonMenu
@@ -298,6 +303,11 @@ fun DriveScreen(
         vaultSession.messages.collect { snackbarHostState.showSnackbar(it, withDismissAction = true) }
     }
     var vaultTarget by remember { mutableStateOf<FileStat?>(null) }
+    // PikSeek：预览缓存的弹窗，见 PreviewCacheDialog。没有 LocalPreviewPacks 时（别的窗口）按钮与菜单项都不出现
+    val previewPacks = LocalPreviewPacks.current
+    var previewCacheTarget by remember { mutableStateOf<PreviewCacheTarget?>(null) }
+    // 进网盘页、换文件夹时看一眼网盘上的预览包，角标照它画；列过不久的不重列
+    LaunchedEffect(previewPacks, currentFolderId) { previewPacks?.refresh() }
 
     // 视图模式存进偏好，切 Tab 与重启后保持上次的选择
     // 初值同步读：异步给默认值的话，选了列表的用户每次进来都先闪一帧海报墙。DataStore 在
@@ -576,7 +586,10 @@ fun DriveScreen(
         val downloadable = files.filterNot { it.isUploading }.takeIf { it.isNotEmpty() }?.let { targets ->
             SheetAction(Icons.Outlined.Download, "下载到本地", { download(targets) })
         }
-        return listOfNotNull(remove, restore, downloadable) + listOf(
+        val previewable = files.filter { !it.isVaulted && it.isPlayableVideo() }.takeIf { it.isNotEmpty() && previewPacks != null }?.let { videos ->
+            SheetAction(Icons.Outlined.Preview, "预览缓存", { previewCacheTarget = PreviewCacheTarget.Files(videos) })
+        }
+        return listOfNotNull(remove, restore, downloadable, previewable) + listOf(
             SheetAction(Icons.Outlined.DriveFileMove, "移动到", { moveTargetIds = ids }),
             SheetAction(Icons.Outlined.ContentCopy, "复制到", { copyTargetIds = ids }),
             SheetAction(Icons.Outlined.Edit, "批量重命名", { batchRenameTargets = renamable }),
@@ -599,6 +612,14 @@ fun DriveScreen(
         }
         add(SheetAction(Icons.Outlined.Edit, "重命名", { startRename(file) }))
         add(SheetAction(Icons.Outlined.Delete, "从归档移除", { state.removeFromVault(listOf(file.id)) }, destructive = true))
+    }
+
+    // PikSeek：文件夹与视频的「预览缓存」。归档条目在网盘里没有文件，回收站里的做了也没用
+    fun previewCacheAction(file: FileStat): (() -> Unit)? = when {
+        previewPacks == null || file.isVaulted || state.libraryView == DriveLibrary.TRASH -> null
+        file.isFolder -> { { previewCacheTarget = PreviewCacheTarget.Folder(file.id, file.name) } }
+        file.isPlayableVideo() -> { { previewCacheTarget = PreviewCacheTarget.Files(listOf(file)) } }
+        else -> null
     }
 
     // 一项的全部操作，右键菜单、详情栏与操作面板共用。库读 state 上的当下值：记住的回调里拿不到重组后的局部变量。
@@ -636,6 +657,7 @@ fun DriveScreen(
             onCopySource = { copySource(file) },
             onOpenSource = { file.sourceUrl?.let(platform::openUrl) },
             onFindDuplicates = { duplicateSession.open(PathBreadcrumb(file.id, file.name)) },
+            onPreviewCache = previewCacheAction(file),
             onExtract = { archiveSession.extract(listOf(file)) },
             onShare = { shareTargets = listOf(file) },
             onOpenInExternalPlayer = platform.externalPlayer?.let { { openInExternalPlayer(file) } },
@@ -1086,6 +1108,7 @@ fun DriveScreen(
             onSelectAll = { state.toggleSelectAll() },
             // 宽窗口没有收起后的把手，有会话时点它是放回来
             onFindDuplicates = { if (duplicateState != null) duplicateSession.reopen() else duplicateSession.open(activeFolder) },
+            onPreviewCache = previewPacks?.let { { previewCacheTarget = PreviewCacheTarget.Folder(activeFolder.id, activeFolder.name.ifBlank { "网盘根目录" }) } },
             stash = buildList {
                 if (instantState != null && !instantSession.isSheetOpen) {
                     add(StashItem(Icons.Outlined.Bolt, "继续添加链接", instantSession::reopen, "放弃添加链接", instantSession::end))
@@ -1401,6 +1424,10 @@ fun DriveScreen(
                                     // 清空回收站、清空播放历史，窄窗口里没有命令栏，放在顶栏
                                     libraryPageActions(libraryView, state.files.isEmpty(), { libraryConfirm = it }, { state.files.map { it.id } })
                                         .forEach { action -> TooltipIconButton(action.icon, action.label, action.onClick) }
+                                    // PikSeek：给眼前这个文件夹做预览缓存。与查找重复同样只在文件夹里、有东西时出现
+                                    if (commands.findDuplicates) {
+                                        PreviewCacheButton({ previewCacheTarget = PreviewCacheTarget.Folder(activeFolder.id, activeFolder.name.ifBlank { "网盘根目录" }) })
+                                    }
                                     TooltipIconButton(Icons.Outlined.Search, "搜索", { isSearchOpen = true }, shortcut = platform.shortcutModifier.label("F"))
                                     if (showsRefreshButton()) {
                                         TooltipIconButton(Icons.Outlined.Refresh, "刷新", { state.load(refresh = true) }, shortcut = "F5")
@@ -1633,6 +1660,7 @@ fun DriveScreen(
             onCopySource = { copySource(target) },
             onOpenSource = { target.sourceUrl?.let(platform::openUrl) },
             onFindDuplicates = { duplicateSession.open(PathBreadcrumb(target.id, target.name)) },
+            onPreviewCache = previewCacheAction(target),
             onExtract = { archiveSession.extract(listOf(target)) },
             onShare = { shareTargets = listOf(target) },
             onOpenInExternalPlayer = platform.externalPlayer?.let { { openInExternalPlayer(target) } },
@@ -1645,6 +1673,10 @@ fun DriveScreen(
 
     vaultTarget?.let { folder ->
         VaultFolderDialog(PathBreadcrumb(folder.id, folder.name), vaultSession, onDismiss = { vaultTarget = null })
+    }
+
+    previewCacheTarget?.let { target ->
+        PreviewCacheDialog(target, onDismiss = { previewCacheTarget = null })
     }
 
     libraryConfirm?.let { request ->

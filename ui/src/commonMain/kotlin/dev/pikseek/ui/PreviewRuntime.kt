@@ -15,6 +15,9 @@ import dev.pikseek.thumbnail.ThumbnailFrame
 import dev.pikseek.thumbnail.ThumbnailSource
 import dev.pikseek.thumbnail.TsSliceSource
 import dev.pikseek.ui.player.WebpSpriteCodec
+import dev.pikseek.ui.preview.PreviewCacheJobs
+import dev.pikseek.ui.preview.PreviewCacheRequest
+import dev.pikseek.ui.preview.PreviewCloud
 import kotlin.concurrent.Volatile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +48,15 @@ class PreviewRuntime(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val cache = ThumbnailCache(cacheDirectory, WebpSpriteCodec)
     private val engine = ThumbnailEngine(cache)
+    private val cloud = PreviewCloud(services)
+    private val jobs = PreviewCacheJobs(
+        scope = scope,
+        cloud = cloud,
+        cache = cache,
+        engine = engine,
+        listFolder = { services.driveRepository.listAllFiles(it).getOrThrow() },
+        openSources = { fileId, durationMs -> openSources(fileId, null, durationMs) },
+    )
 
     val environment = PikSeekEnvironment(
         settings = settings,
@@ -56,6 +68,19 @@ class PreviewRuntime(
             override suspend fun trim(limitBytes: Long) {
                 withContext(Dispatchers.IO) { cache.trim(limitBytes) }
             }
+        },
+        previewPacks = object : PreviewPackControl {
+            override val packs = cloud.packs
+            override val live = this@PreviewRuntime.jobs.live
+            override val jobs = this@PreviewRuntime.jobs.state
+
+            override fun refresh() {
+                scope.launch { cloud.refresh() }
+            }
+
+            override fun start(request: PreviewCacheRequest) = this@PreviewRuntime.jobs.enqueue(request)
+
+            override fun cancel() = this@PreviewRuntime.jobs.cancel()
         },
     )
 
@@ -96,6 +121,7 @@ class PreviewRuntime(
             ThumbnailDensity.Medium -> PreviewDensity.Medium
             ThumbnailDensity.High -> PreviewDensity.High
         }
+        val gcid = fingerprint.contentHash
         val session = engine.open(
             fingerprint = fingerprint,
             density = density,
@@ -103,6 +129,16 @@ class PreviewRuntime(
             position = position,
             busy = busy,
             parallelism = parallelism,
+            // 本机没有时先看网盘上有没有做好的预览包：有就取回来，一个请求顶几十上百次取帧
+            prepare = {
+                if (gcid.isNotBlank() && cache.stored(fingerprint) == null) {
+                    cloud.lookup(gcid)?.let { pack ->
+                        val bytes = cloud.download(pack)
+                        val imported = withContext(Dispatchers.IO) { cache.importPack(fingerprint, bytes) }
+                        PikoLog.i(TAG, "预览取自网盘上的预览包：${imported?.frameCount ?: 0}/${imported?.slotCount ?: 0} 格，${bytes.size / 1024} KB")
+                    }
+                }
+            },
         )
         // 做完之后按上限清理别的视频的缓存，正在看的这个不删
         scope.launch {

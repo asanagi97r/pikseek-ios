@@ -43,6 +43,19 @@ data class SpriteIndex(
     val isComplete: Boolean get() = frames.size >= slotCount
 }
 
+/** 磁盘上一个视频的预览概况：按多少格做的、做了几格。 */
+class StoredPreview internal constructor(index: SpriteIndex) {
+    val slotCount: Int = index.slotCount
+    val durationMs: Long = index.durationMs
+    val frameCount: Int = index.frames.map { it.slot }.distinct().size
+    val source: String = index.source
+
+    /** 照着它做的那份计划：沿用它的格数与时长，补齐时与已有的帧对得上。 */
+    val plan: ThumbnailPlan get() = ThumbnailPlan(durationMs, slotCount)
+
+    val isComplete: Boolean get() = frameCount >= slotCount
+}
+
 /** 文件的修改时刻，毫秒；读不到为 0。缓存拿索引文件的修改时刻当「最近一次用到」。 */
 internal expect fun fileLastModifiedMillis(path: String): Long
 
@@ -69,24 +82,25 @@ class ThumbnailCache(private val root: String, private val codec: SpriteCodec) {
     private fun directory(fingerprint: MediaFingerprint): Path = Path(rootPath, fingerprint.cacheKey())
 
     /**
-     * 读出已有的缓存。没有、版本不对、格数与眼下的计划不同、或图坏了，都返回 null（并把那个目录删掉重来）。
+     * 磁盘上这个视频有没有预览、按多少格做的、做了几格。只读索引，不解图。没有或读不懂时为 null。
+     */
+    fun stored(fingerprint: MediaFingerprint): StoredPreview? = readIndex(directory(fingerprint))?.let(::StoredPreview)
+
+    /**
+     * 读出已有的缓存。没有、版本不对、或图坏了，返回 null（读不懂的目录顺带删掉）。
+     * 格数或时长与 [plan] 不同也返回 null，但不删：那是另一档的预览，删不删由调用方定。
      * 顺带把它记为刚用过。
      */
     fun load(fingerprint: MediaFingerprint, plan: ThumbnailPlan): Map<Int, ThumbnailFrame>? {
         val directory = directory(fingerprint)
         val indexFile = Path(directory, INDEX)
         if (SystemFileSystem.metadataOrNull(indexFile)?.isRegularFile != true) return null
-        val index = runCatching { json.decodeFromString(SpriteIndex.serializer(), read(indexFile).decodeToString()) }.getOrNull()
-        val usable = index != null &&
-            index.version == MediaFingerprint.FORMAT_VERSION &&
-            index.slotCount == plan.slotCount &&
-            index.durationMs == plan.durationMs &&
-            index.columns == COLUMNS && index.rows == ROWS &&
-            index.width > 0 && index.height > 0
-        if (!usable) {
+        val index = readIndex(directory)
+        if (index == null) {
             delete(directory)
             return null
         }
+        if (index.slotCount != plan.slotCount || index.durationMs != plan.durationMs) return null
         val frames = HashMap<Int, ThumbnailFrame>()
         for ((sheetNumber, entries) in index.frames.groupBy { it.sheet }) {
             val file = Path(directory, sheetName(sheetNumber))
@@ -154,6 +168,44 @@ class ThumbnailCache(private val root: String, private val codec: SpriteCodec) {
     /** [fingerprint] 的缓存在磁盘上占多少字节。 */
     fun sizeOf(fingerprint: MediaFingerprint): Long = sizeOf(directory(fingerprint))
 
+    /** 删掉 [fingerprint] 的缓存。 */
+    fun delete(fingerprint: MediaFingerprint) = delete(directory(fingerprint))
+
+    /**
+     * 这个视频的整份预览（索引与它提到的雪碧图）打成一个包，见 [PreviewPack]。没有缓存时为 null。
+     */
+    fun exportPack(fingerprint: MediaFingerprint): ByteArray? {
+        val directory = directory(fingerprint)
+        val index = readIndex(directory) ?: return null
+        val files = ArrayList<Pair<String, ByteArray>>()
+        files += INDEX to read(Path(directory, INDEX))
+        for (sheet in index.frames.map { it.sheet }.distinct().sorted()) {
+            val file = Path(directory, sheetName(sheet))
+            if (SystemFileSystem.metadataOrNull(file)?.isRegularFile != true) return null
+            files += file.name to read(file)
+        }
+        return PreviewPack.encode(files)
+    }
+
+    /**
+     * 把 [exportPack] 打出的包解进 [fingerprint] 的缓存目录，换掉原有的。包坏了、版本不对时不动原有的，返回 null。
+     */
+    fun importPack(fingerprint: MediaFingerprint, bytes: ByteArray): StoredPreview? {
+        val files = PreviewPack.decode(bytes) ?: return null
+        val indexBytes = files.firstOrNull { it.first == INDEX }?.second ?: return null
+        val index = parseIndex(indexBytes) ?: return null
+        val sheetNames = index.frames.map { sheetName(it.sheet) }.toSet()
+        // 包里只该有索引与它提到的雪碧图；别的名字一概不写，也就写不到缓存目录外面去
+        val sheets = files.filter { it.first in sheetNames }
+        if (sheets.size != sheetNames.size) return null
+        val directory = directory(fingerprint)
+        delete(directory)
+        SystemFileSystem.createDirectories(directory)
+        sheets.forEach { (name, data) -> replace(Path(directory, name), data) }
+        replace(Path(directory, INDEX), indexBytes)
+        return StoredPreview(index)
+    }
+
     /** 全部缓存占多少字节。 */
     fun totalBytes(): Long = entries().sumOf { sizeOf(it) }
 
@@ -210,6 +262,22 @@ class ThumbnailCache(private val root: String, private val codec: SpriteCodec) {
     }
 
     private fun read(file: Path): ByteArray = SystemFileSystem.source(file).buffered().use { it.readByteArray() }
+
+    private fun readIndex(directory: Path): SpriteIndex? {
+        val file = Path(directory, INDEX)
+        if (SystemFileSystem.metadataOrNull(file)?.isRegularFile != true) return null
+        return runCatching { read(file) }.getOrNull()?.let(::parseIndex)
+    }
+
+    /** 解析索引并检查它是这一版程序读得懂的。 */
+    private fun parseIndex(bytes: ByteArray): SpriteIndex? {
+        val index = runCatching { json.decodeFromString(SpriteIndex.serializer(), bytes.decodeToString()) }.getOrNull() ?: return null
+        val usable = index.version == MediaFingerprint.FORMAT_VERSION &&
+            index.columns == COLUMNS && index.rows == ROWS &&
+            index.width > 0 && index.height > 0 && index.slotCount > 0 && index.durationMs > 0 &&
+            index.frames.all { it.slot in 0 until index.slotCount && it.sheet >= 0 }
+        return index.takeIf { usable }
+    }
 
     private fun replace(target: Path, bytes: ByteArray) {
         val staging = Path(target.parent ?: rootPath, target.name + ".tmp")

@@ -34,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.ViewSidebar
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.outlined.FileCopy
+import androidx.compose.material.icons.outlined.Preview
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Share
@@ -42,6 +43,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.TonalToggleButton
+import dev.pikseek.ui.preview.PreviewCacheButton
 import dev.piko.ui.components.connectedToggleShapes
 import dev.piko.ui.components.CloudCapacityRow
 import dev.piko.ui.components.toReadableSize
@@ -276,6 +278,8 @@ internal fun ExplorerCommandBar(
     onTypeFilterChange: (FileCategory?) -> Unit,
     onSelectAll: () -> Unit,
     onFindDuplicates: () -> Unit,
+    /** PikSeek：给眼前的文件夹做预览缓存，与查找重复同在文件夹里出现；为 null 时不摆。 */
+    onPreviewCache: (() -> Unit)?,
     /** 收着的东西，见 [StashTray]；为空时不画。 */
     stash: List<StashItem>,
     sectionJumper: @Composable () -> Unit,
@@ -387,6 +391,11 @@ internal fun ExplorerCommandBar(
         if (commands.findDuplicates) {
             add(BarItem("findDuplicates", 20, listOf(SheetAction(Icons.Outlined.FileCopy, "查找重复", onFindDuplicates, group = 4))) {
                 TooltipIconButton(Icons.Outlined.FileCopy, "查找重复", onFindDuplicates)
+            })
+        }
+        if (commands.findDuplicates && onPreviewCache != null) {
+            add(BarItem("previewCache", 20, listOf(SheetAction(Icons.Outlined.Preview, "预览缓存", onPreviewCache, group = 4))) {
+                PreviewCacheButton(onPreviewCache)
             })
         }
     }

@@ -281,14 +281,50 @@ class ThumbnailEngineTest {
     }
 
     @Test
-    fun differentDensityRebuildsInsteadOfMixing(): Unit = runBlocking {
+    fun watchingUsesAStoredPreviewOfAnotherDensityAsIs(): Unit = runBlocking {
         val duration = 30 * 60_000L
         engine.open(fingerprint(duration), PreviewDensity.Low, { listOf(FakeSource(duration)) }, { 0L }, idle, oneWorker).finish()
         val source = FakeSource(duration)
+        // 设置里的档次只管没有缓存的视频：已有低档的就用低档的，一帧也不重做
         val session = engine.open(fingerprint(duration), PreviewDensity.Medium, { listOf(source) }, { 0L }, idle, oneWorker)
         session.finish()
+        assertEquals(30, session.plan.slotCount)
+        assertEquals(30, session.progress.value.fromCache)
+        assertEquals(0, source.requested.size)
+    }
+
+    @Test
+    fun exactModeRebuildsAtTheChosenDensityInsteadOfMixing(): Unit = runBlocking {
+        val duration = 30 * 60_000L
+        engine.open(fingerprint(duration), PreviewDensity.Low, { listOf(FakeSource(duration)) }, { 0L }, idle, oneWorker).finish()
+        val source = FakeSource(duration)
+        val session = engine.open(
+            fingerprint(duration), PreviewDensity.Medium, { listOf(source) }, { 0L }, idle, oneWorker,
+            mode = ThumbnailEngine.CacheMode.Exact,
+        )
+        session.finish()
+        assertEquals(60, session.plan.slotCount)
         assertEquals(0, session.progress.value.fromCache)
         assertEquals(60, source.requested.size)
+        assertEquals(60, cache.stored(fingerprint(duration))?.frameCount)
+    }
+
+    @Test
+    fun packRoundTripsIntoAnotherCacheAndCountsAsComplete(): Unit = runBlocking {
+        val duration = 20 * 60_000L
+        engine.open(fingerprint(duration), PreviewDensity.Medium, { listOf(FakeSource(duration)) }, { 0L }, idle, twoWorkers).finish()
+        val pack = assertNotNull(cache.exportPack(fingerprint(duration)))
+        val other = ThumbnailCache(Files.createTempDirectory("thumb-other").toString(), PngSpriteCodec)
+        // 另一台设备读出的时长差了一秒：认 gcid，不认时长
+        val elsewhere = fingerprint(duration + 1_000)
+        val imported = assertNotNull(other.importPack(elsewhere, pack))
+        assertTrue(imported.isComplete)
+        val source = FakeSource(duration)
+        val session = ThumbnailEngine(other).open(elsewhere, PreviewDensity.High, { listOf(source) }, { 0L }, idle, oneWorker)
+        session.finish()
+        assertEquals(0, source.requested.size)
+        assertEquals(imported.slotCount, session.progress.value.fromCache)
+        assertNull(other.importPack(elsewhere, pack.copyOf(pack.size - 3)))
     }
 
     @Test

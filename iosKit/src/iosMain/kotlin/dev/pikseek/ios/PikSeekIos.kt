@@ -26,6 +26,7 @@ import dev.pikseek.platform.IosPaths
 import dev.pikseek.platform.UserDefaultsSettingsStore
 import dev.pikseek.thumbnail.IosThumbnailPlatform
 import dev.pikseek.ui.LocalPikSeek
+import dev.pikseek.ui.LocalPreviewPacks
 import dev.pikseek.ui.PreviewRuntime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -160,7 +161,10 @@ object PikSeekIos {
                     IosPlayerScreen(request, current.services, current.preview, current.native, onClose)
                 }
             }
-            CompositionLocalProvider(LocalPikSeek provides current.preview.environment) {
+            CompositionLocalProvider(
+                LocalPikSeek provides current.preview.environment,
+                LocalPreviewPacks provides current.preview.environment.previewPacks,
+            ) {
                 PikoApp(
                     services = current.services,
                     platform = current.platform,

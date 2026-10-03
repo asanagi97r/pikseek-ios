@@ -82,8 +82,10 @@ class DecodedSprite(val width: Int, val height: Int, val pixels: IntArray)
 /**
  * 一个视频的指纹，缓存据此认它。不用播放地址：直链带签名，几小时就换。
  *
- * [contentHash] 是 PikPak 的 gcid（内容哈希），同一份内容换了文件名、换了目录都认得出；
- * 没有时（本机文件）退回 [fileId]。再带上大小与时长，内容被替换时缓存自然作废。
+ * [contentHash] 是 PikPak 的 gcid（内容哈希），同一份内容换了文件名、换了目录、换了账号都认得出，
+ * 内容一变它就变。有它时缓存只按它与大小认；不按时长：同一个文件，播放器、转码流、网盘的媒体信息
+ * 给出的时长会差一两秒，按时长认就会把同一个视频认成几个。
+ * 没有 gcid 时（本机文件）退回 [fileId]，再带上时长。
  */
 data class MediaFingerprint(
     val fileId: String,
@@ -93,12 +95,15 @@ data class MediaFingerprint(
 ) {
     /** 缓存目录名：指纹的摘要，不含文件名。 */
     fun cacheKey(): String {
-        val identity = contentHash.ifBlank { "id:$fileId" }
-        return Digests.hex(Digests.sha256("$identity|$sizeBytes|$durationMs|v$FORMAT_VERSION".encodeToByteArray())).take(32)
+        val identity = if (contentHash.isNotBlank()) "gcid:${contentHash.uppercase()}|$sizeBytes" else "id:$fileId|$sizeBytes|$durationMs"
+        return Digests.hex(Digests.sha256("$identity|v$FORMAT_VERSION".encodeToByteArray())).take(32)
     }
 
     companion object {
-        /** 缓存格式的版本。改了雪碧图或索引的格式就加一，旧缓存自动作废。 */
-        const val FORMAT_VERSION = 1
+        /**
+         * 缓存格式的版本。改了雪碧图、索引或目录名的算法就加一，旧缓存自动作废。
+         * 2：有 gcid 时目录名不再含时长，好与网盘上的预览包对上。
+         */
+        const val FORMAT_VERSION = 2
     }
 }

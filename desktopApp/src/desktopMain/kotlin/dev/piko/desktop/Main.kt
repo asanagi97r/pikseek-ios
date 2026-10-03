@@ -49,6 +49,7 @@ import dev.pikseek.platform.AppPaths
 import dev.pikseek.platform.AppSettings
 import dev.pikseek.desktop.PikSeekRuntime
 import dev.pikseek.ui.LocalPikSeek
+import dev.pikseek.ui.LocalPreviewPacks
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
@@ -276,6 +277,7 @@ fun main(args: Array<String>) {
                 LocalPikoPlatform provides platform,
                 LocalHorizontalResizeCursor provides HorizontalResizeCursor,
                 LocalPikSeek provides pikSeek.environment,
+                LocalPreviewPacks provides pikSeek.environment.previewPacks,
             ) {
                 PikoTheme(appearance = appearance) {
                     // 有侧边栏时与侧边栏、网盘页页眉同为外框色；没有时与网盘页的顶栏同为页面本色。

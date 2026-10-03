@@ -1,5 +1,6 @@
 package dev.piko.ui.components
 
+import dev.pikseek.ui.preview.PreviewCacheBadge
 import dev.piko.shared.data.isVaulted
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.foundation.background
@@ -261,7 +262,13 @@ fun FileListItem(
         headline = title ?: file.displayTitle(),
         headlineMaxLines = if (title != null) 1 else 2,
         headlineFontWeight = if (file.isFolder) FontWeight.Medium else null,
-        leading = { FileLeadingVisual(file = file, isSpoilerBlurred = isSpoilerBlurred) },
+        leading = {
+            Box {
+                FileLeadingVisual(file = file, isSpoilerBlurred = isSpoilerBlurred)
+                // PikSeek：预览缓存做到哪了
+                PreviewCacheBadge(file, Modifier.align(Alignment.TopEnd).padding(2.dp))
+            }
+        },
         onClick = onClick,
         onMoreClick = onDetailsClick,
         trailing = { ItemDetailsButton(visible = !detailsOnHover || hovered, onClick = onDetailsClick) },

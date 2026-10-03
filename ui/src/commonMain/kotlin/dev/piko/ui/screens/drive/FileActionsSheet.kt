@@ -12,6 +12,7 @@ import androidx.compose.material.icons.outlined.OndemandVideo
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FileCopy
+import androidx.compose.material.icons.outlined.Preview
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.SwipeVertical
@@ -69,6 +70,8 @@ internal fun FileActionsSheet(
     onCopySource: () -> Unit,
     onOpenSource: () -> Unit,
     onFindDuplicates: () -> Unit,
+    /** PikSeek：文件夹与视频的「预览缓存」；为 null 时不给这一项。 */
+    onPreviewCache: (() -> Unit)? = null,
     onExtract: () -> Unit,
     onShare: () -> Unit,
     onOpenInExternalPlayer: (() -> Unit)?,
@@ -106,6 +109,7 @@ internal fun FileActionsSheet(
         onCopySource = onCopySource,
         onOpenSource = onOpenSource,
         onFindDuplicates = onFindDuplicates,
+        onPreviewCache = onPreviewCache,
         onExtract = onExtract,
         onShare = onShare,
         onOpenInExternalPlayer = onOpenInExternalPlayer,
@@ -152,6 +156,8 @@ internal fun fileActions(
     onExtract: () -> Unit,
     onShare: () -> Unit,
     onOpenInExternalPlayer: (() -> Unit)?,
+    /** PikSeek：文件夹与视频的「预览缓存」；为 null 时不给这一项。 */
+    onPreviewCache: (() -> Unit)? = null,
     onOpenInNewTab: (() -> Unit)? = null,
     /** 固定或取消固定到快速访问；为 null 时没有快速访问可去（窄窗口），不给这一项。 */
     onTogglePin: (() -> Unit)? = null,
@@ -201,6 +207,7 @@ internal fun fileActions(
         null -> Unit
     }
     if (file.isFolder) add(SheetAction(Icons.Outlined.FileCopy, "查找重复", onFindDuplicates))
+    if (onPreviewCache != null) add(SheetAction(Icons.Outlined.Preview, "预览缓存", onPreviewCache))
     if (file.isFolder && onVault != null) add(SheetAction(Icons.Outlined.Inventory2, "归档", onVault))
     // 上传中的文件分享出去对方打不开
     if (!file.isUploading) add(SheetAction(Icons.Outlined.Share, "分享", onShare))

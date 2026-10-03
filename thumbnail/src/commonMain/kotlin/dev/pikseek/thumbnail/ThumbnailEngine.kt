@@ -141,6 +141,8 @@ class ThumbnailEngine(val cache: ThumbnailCache) {
      * @param position 眼下播放到哪，毫秒。决定先做哪几格。
      * @param busy 主播放器正忙时为 true，引擎让路，不再发起新的取帧。
      * @param parallelism 允许同时取几帧，1 或 2。
+     * @param mode 磁盘上已有别的档次的预览时怎么办，见 [CacheMode]。
+     * @param prepare 读本机缓存之前先做的事，例如本机没有时从网盘取回预览包。失败不影响后面。
      */
     fun open(
         fingerprint: MediaFingerprint,
@@ -149,11 +151,24 @@ class ThumbnailEngine(val cache: ThumbnailCache) {
         position: () -> Long,
         busy: StateFlow<Boolean>,
         parallelism: StateFlow<Int>,
-    ): Session = Session(fingerprint, ThumbnailPlan.of(fingerprint.durationMs, density), sources, position, busy, parallelism)
+        mode: CacheMode = CacheMode.UseStored,
+        prepare: suspend () -> Unit = {},
+    ): Session = Session(fingerprint, ThumbnailPlan.of(fingerprint.durationMs, density), mode, prepare, sources, position, busy, parallelism)
+
+    /** 磁盘上已有的预览与要的档次不同时怎么办。 */
+    enum class CacheMode {
+        /** 有就用它，沿用它的格数（没做完的照它补齐）；没有才按要的档次做。看视频时用：设置里的档次只管没有缓存的。 */
+        UseStored,
+
+        /** 只认同一档的；别的档次的删掉，按要的档次重做。生成预览缓存时用：用户选了哪档就是哪档。 */
+        Exact,
+    }
 
     inner class Session internal constructor(
         val fingerprint: MediaFingerprint,
-        val plan: ThumbnailPlan,
+        requested: ThumbnailPlan,
+        private val mode: CacheMode,
+        private val prepare: suspend () -> Unit,
         private val sources: suspend () -> List<ThumbnailSource>,
         private val position: () -> Long,
         private val busy: StateFlow<Boolean>,
@@ -161,12 +176,30 @@ class ThumbnailEngine(val cache: ThumbnailCache) {
     ) : AutoCloseable {
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         private val frames = FrameTable()
-        private val coarse = plan.coarseSlots.toSet()
+
+        /** 这一次照着做的计划。开始时是要的档次；读到磁盘上沿用的预览后换成它的，那时还没有任何帧。 */
+        @Volatile
+        var plan: ThumbnailPlan = requested
+            private set
+
+        @Volatile
+        private var coarse: Set<Int> = requested.coarseSlots.toSet()
 
         // 离得太远的图是误导：最多容许一个粗略间隔
-        private val maxDistanceMs = (plan.durationMs / coarse.size.coerceAtLeast(1)).coerceAtLeast(2 * plan.intervalMs)
-        private val _progress = MutableStateFlow(ThumbnailProgress(coarseTotal = coarse.size, fullTotal = plan.slotCount))
+        @Volatile
+        private var maxDistanceMs = maxDistanceFor(requested)
+        private val _progress = MutableStateFlow(ThumbnailProgress(coarseTotal = coarse.size, fullTotal = requested.slotCount))
         val progress: StateFlow<ThumbnailProgress> = _progress.asStateFlow()
+
+        private fun maxDistanceFor(plan: ThumbnailPlan): Long =
+            (plan.durationMs / plan.coarseSlots.size.coerceAtLeast(1)).coerceAtLeast(2 * plan.intervalMs)
+
+        private fun adopt(next: ThumbnailPlan) {
+            plan = next
+            coarse = next.coarseSlots.toSet()
+            maxDistanceMs = maxDistanceFor(next)
+            _progress.update { it.copy(coarseTotal = coarse.size, fullTotal = next.slotCount) }
+        }
 
         private val queueLock = SynchronizedObject()
         private var queue = ArrayDeque<Int>()
@@ -224,6 +257,23 @@ class ThumbnailEngine(val cache: ThumbnailCache) {
         suspend fun join() = job.join()
 
         private suspend fun run() = coroutineScope {
+            try {
+                prepare()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // 取不回网盘上的包就当没有，照常往下
+            }
+            val stored = withContext(Dispatchers.IO) { runCatching { cache.stored(fingerprint) }.getOrNull() }
+            if (stored != null && stored.slotCount != plan.slotCount) {
+                when (mode) {
+                    CacheMode.UseStored -> adopt(stored.plan)
+                    CacheMode.Exact -> withContext(Dispatchers.IO) { runCatching { cache.delete(fingerprint) } }
+                }
+            } else if (stored != null && stored.durationMs != plan.durationMs) {
+                // 同样的格数、时长差一点（各处读出的时长差一两秒）：照它的时长，帧的位置才对得上
+                adopt(stored.plan)
+            }
             val cached = withContext(Dispatchers.IO) { runCatching { cache.load(fingerprint, plan) }.getOrNull() }.orEmpty()
             cached.forEach { (slot, frame) -> put(slot, frame, dirty = false) }
             _progress.update { it.copy(fromCache = cached.size, cacheBytes = cache.sizeOf(fingerprint)) }

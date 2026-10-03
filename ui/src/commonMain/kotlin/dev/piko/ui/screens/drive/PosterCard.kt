@@ -1,5 +1,6 @@
 package dev.piko.ui.screens.drive
 
+import dev.pikseek.ui.preview.PreviewCacheBadge
 import dev.piko.ui.components.itemMarks
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -192,6 +193,8 @@ internal fun PosterCard(
             }
             // 视频正中一个播放键：封面是一张截图，不标出来的话与图片、文件夹的封面看不出分别
             if (isVideo && hasCover) VideoPlayMark(Modifier.align(Alignment.Center))
+            // PikSeek：预览缓存做到哪了。右上角是标签，放左上
+            PreviewCacheBadge(file, Modifier.align(Alignment.TopStart).padding(6.dp))
             val cornerTags = tags.filter { it != resolution }.take(COVER_CORNER_TAGS)
             if (cornerTags.isNotEmpty()) {
                 // 放不下的整个丢掉，不截半个标签

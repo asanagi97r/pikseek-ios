@@ -1,5 +1,6 @@
 package dev.piko.ui.screens.drive
 
+import dev.pikseek.ui.preview.PreviewCacheBadge
 import dev.piko.ui.theme.LocalFixedColors
 import androidx.compose.foundation.shape.CircleShape
 import dev.piko.shared.data.isVaulted
@@ -127,6 +128,9 @@ internal fun GalleryTile(
                 onCheckedChange = null,
                 modifier = Modifier.align(Alignment.TopEnd).minimumInteractiveComponentSize(),
             )
+        } else {
+            // PikSeek：预览缓存做到哪了。多选时右上角给勾选框
+            PreviewCacheBadge(file, Modifier.align(Alignment.TopEnd).padding(6.dp))
         }
     }
 }
