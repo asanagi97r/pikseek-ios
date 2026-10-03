@@ -1,0 +1,56 @@
+2026-10-03 06:37:21.516 I App: 启动 PikSeek 1.0，iOS 26.5，iPhone
+2026-10-03 06:37:21.619 I Auth: 启动：没有上次的账号，进登录页，已保存 0 个账号
+2026-10-03 06:38:49.790 I App: 启动 PikSeek 1.0，iOS 26.5，iPhone
+2026-10-03 06:38:49.843 I Auth: 启动：没有上次的账号，进登录页，已保存 0 个账号
+2026-10-03 06:39:19.340 I App: 启动 PikSeek 1.0，iOS 26.5，iPhone
+2026-10-03 06:39:20.181 I Auth: 启动：没有上次的账号，进登录页，已保存 0 个账号
+2026-10-03 06:39:22.383 I UiTest: 用假令牌登录
+2026-10-03 06:39:22.383 I Auth: 令牌登录
+2026-10-03 06:39:22.399 I Auth: 令牌登录 成功，用时 15 ms
+2026-10-03 06:39:22.504 I UiTest: 已登录，进主界面
+2026-10-03 06:39:23.743 W PreviewCloud: 列网盘上的预览缓存失败：IOException
+2026-10-03 06:39:25.282 I Domain: 根域名测速：mypikpak.com 242 ms，mypikpak.net 236 ms，pikpak.me 240 ms，pikpakdrive.com 242 ms，沿用 mypikpak.com
+2026-10-03 06:39:25.800 W DriveRepository: 取账号类型失败
+kotlinx.io.IOException: 认证服务没有换发新的访问令牌
+    at 0   PikSeek.debug.dylib                 0x10cb153a7        kfun:kotlin.Throwable#<init>(kotlin.String?){} + 99 
+    at 1   PikSeek.debug.dylib                 0x10cb0f643        kfun:kotlin.Exception#<init>(kotlin.String?){} + 95 
+    at 2   PikSeek.debug.dylib                 0x10e30299b        kfun:kotlinx.io.IOException#<init>(kotlin.String?){} + 95 
+    at 3   PikSeek.debug.dylib                 0x10bd681af        kfun:dev.piko.shared.data.BrokerSessionStore.$loadCOROUTINE$0.invokeSuspend#internal + 2307 
+    at 4   PikSeek.debug.dylib                 0x10cc44cab        kfun:kotlin.coroutines.native.internal.BaseContinuationImpl#invokeSuspend(kotlin.Result<kotlin.Any?>){}kotlin.Any?-trampoline + 67 
+    at 5   PikSeek.debug.dylib                 0x10cb1a9f7        kfun:kotlin.coroutines.native.internal.BaseContinuationImpl#resumeWith(kotlin.Result<kotlin.Any?>){} + 675 
+    at 6   PikSeek.debug.dylib                 0x10cc44d73        kfun:kotlin.coroutines.Continuation#resumeWith(kotlin.Result<1:0>){}-trampoline + 91 
+    at 7   PikSeek.debug.dylib                 0x10cd48f0b        kfun:kotlinx.coroutines.DispatchedTask#run(){} + 2035 
+    at 8   PikSeek.debug.dylib                 0x10cd785df        kfun:kotlinx.coroutines.Runnable#run(){}-trampoline + 83 
+    at 9   PikSeek.debug.dylib                 0x10cd737fb        kfun:kotlinx.coroutines.DarwinGlobalQueueDispatcher.DarwinGlobalQueueDispatcher$dispatch$$inlined$autoreleasepool$1.invoke#internal + 71 
+    at 10  PikSeek.debug.dylib                 0x10cd73853        kfun:kotlinx.coroutines.DarwinGlobalQueueDispatcher.DarwinGlobalQueueDispatcher$dispatch$$inlined$autoreleasepool$1.$<bridge-DN>invoke(){}#internal + 71 
+    at 11  PikSeek.debug.dylib                 0x10cc42a5f        kfun:kotlin.Function0#invoke(){}1:0-trampoline + 91 
+    at 12  PikSeek.debug.dylib                 0x10cd736eb        _6f72672e6a6574627261696e732e6b6f746c696e783a6b6f746c696e782d636f726f7574696e65732d636f72652f6f70742f6275696c644167656e742f776f726b2f343465633665383530643563363366302f6b6f746c696e782d636f726f7574696e65732d636f72652f6e617469766544617277696e2f7372632f44697370617463686572732e6b74_4_knbridge3 + 239 
+    at 13  libdispatch.dylib                   0x18018669f        _dispatch_call_block_and_release + 23 
+    at 14  libdispatch.dylib                   0x1801a0e97        _dispatch_client_callout + 11 
+    at 15  libdispatch.dylib                   0x1801bd747        _dispatch_main_queue_drain.cold.8 + 23 
+    at 16  libdispatch.dylib                   0x1801996fb        _dispatch_root_queue_drain + 879 
+    at 17  libdispatch.dylib                   0x180199eaf        _dispatch_worker_thread2 + 251 
+    at 18  libsystem_pthread.dylib             0x10109ebeb        _pthread_wqthread + 227 
+    at 19  libsystem_pthread.dylib             0x10109da27        start_wqthread + 7
+2026-10-03 06:39:25.800 W Drive: 读取目录失败
+kotlinx.io.IOException: 认证服务没有换发新的访问令牌
+    at 0   PikSeek.debug.dylib                 0x10cb153a7        kfun:kotlin.Throwable#<init>(kotlin.String?){} + 99 
+    at 1   PikSeek.debug.dylib                 0x10cb0f643        kfun:kotlin.Exception#<init>(kotlin.String?){} + 95 
+    at 2   PikSeek.debug.dylib                 0x10e30299b        kfun:kotlinx.io.IOException#<init>(kotlin.String?){} + 95 
+    at 3   PikSeek.debug.dylib                 0x10bd681af        kfun:dev.piko.shared.data.BrokerSessionStore.$loadCOROUTINE$0.invokeSuspend#internal + 2307 
+    at 4   PikSeek.debug.dylib                 0x10cc44cab        kfun:kotlin.coroutines.native.internal.BaseContinuationImpl#invokeSuspend(kotlin.Result<kotlin.Any?>){}kotlin.Any?-trampoline + 67 
+    at 5   PikSeek.debug.dylib                 0x10cb1a9f7        kfun:kotlin.coroutines.native.internal.BaseContinuationImpl#resumeWith(kotlin.Result<kotlin.Any?>){} + 675 
+    at 6   PikSeek.debug.dylib                 0x10cc44d73        kfun:kotlin.coroutines.Continuation#resumeWith(kotlin.Result<1:0>){}-trampoline + 91 
+    at 7   PikSeek.debug.dylib                 0x10cd48f0b        kfun:kotlinx.coroutines.DispatchedTask#run(){} + 2035 
+    at 8   PikSeek.debug.dylib                 0x10cd785df        kfun:kotlinx.coroutines.Runnable#run(){}-trampoline + 83 
+    at 9   PikSeek.debug.dylib                 0x10cd737fb        kfun:kotlinx.coroutines.DarwinGlobalQueueDispatcher.DarwinGlobalQueueDispatcher$dispatch$$inlined$autoreleasepool$1.invoke#internal + 71 
+    at 10  PikSeek.debug.dylib                 0x10cd73853        kfun:kotlinx.coroutines.DarwinGlobalQueueDispatcher.DarwinGlobalQueueDispatcher$dispatch$$inlined$autoreleasepool$1.$<bridge-DN>invoke(){}#internal + 71 
+    at 11  PikSeek.debug.dylib                 0x10cc42a5f        kfun:kotlin.Function0#invoke(){}1:0-trampoline + 91 
+    at 12  PikSeek.debug.dylib                 0x10cd736eb        _6f72672e6a6574627261696e732e6b6f746c696e783a6b6f746c696e782d636f726f7574696e65732d636f72652f6f70742f6275696c644167656e742f776f726b2f343465633665383530643563363366302f6b6f746c696e782d636f726f7574696e65732d636f72652f6e617469766544617277696e2f7372632f44697370617463686572732e6b74_4_knbridge3 + 239 
+    at 13  libdispatch.dylib                   0x18018669f        _dispatch_call_block_and_release + 23 
+    at 14  libdispatch.dylib                   0x1801a0e97        _dispatch_client_callout + 11 
+    at 15  libdispatch.dylib                   0x1801bd747        _dispatch_main_queue_drain.cold.8 + 23 
+    at 16  libdispatch.dylib                   0x1801996fb        _dispatch_root_queue_drain + 879 
+    at 17  libdispatch.dylib                   0x180199eaf        _dispatch_worker_thread2 + 251 
+    at 18  libsystem_pthread.dylib             0x10109ebeb        _pthread_wqthread + 227 
+    at 19  libsystem_pthread.dylib             0x10109da27        start_wqthread + 7

@@ -1,0 +1,400 @@
+2026-10-03 06:39:23.946 Df PikSeek[44052:1b90c] [com.apple.CFNetwork:Default] Connection 0: creating secure tcp or quic connection
+2026-10-03 06:39:23.946 Df PikSeek[44052:1b90c] [com.apple.CFNetwork:Default] Connection 7: enabling TLS
+2026-10-03 06:39:23.946 Df PikSeek[44052:1b90c] [com.apple.CFNetwork:Default] Connection 7: starting, TC(0x0)
+2026-10-03 06:39:23.946 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7 E5B31B21-E6EC-4F36-8124-5514EB1BCA90 Hostname#b565e20b:443 quic-connection, url: https://user.pikpakdrive.com/v1/user/me, definite, attribution: developer, context: com.apple.CFNetwork.NSURLSession.{13DB4363-10AE-41BA-96B8-7600CB2F8A58}{(null)}{Y}{2}{0x0} (private), proc: 2D9D9BFD-308D-3198-A779-1559E762CD0C, delegated upid: 0] start
+2026-10-03 06:39:23.947 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7 Hostname#b565e20b:443 initial parent-flow ((null))] event: path:start @0.000s
+2026-10-03 06:39:23.947 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7 Hostname#b565e20b:443 waiting parent-flow (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.000s, uuid: 5476B7F0-F9F5-48EF-85E0-471529C63CB8
+2026-10-03 06:39:23.947 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7 Hostname#b565e20b:443 in_progress parent-flow (satisfied (Path is satisfied), interface: en0)] event: flow:start_connect @0.000s
+2026-10-03 06:39:23.947 Df PikSeek[44052:1b90c] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C7] reporting state preparing
+2026-10-03 06:39:23.949 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7 Hostname#b565e20b:443 in_progress parent-flow (satisfied (Path is satisfied), interface: en0)] event: flow:start_child @0.002s
+2026-10-03 06:39:23.949 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1 Hostname#b565e20b:443 initial path ((null))] event: path:start @0.002s
+2026-10-03 06:39:23.949 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1 Hostname#b565e20b:443 waiting path (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.002s, uuid: 5476B7F0-F9F5-48EF-85E0-471529C63CB8
+2026-10-03 06:39:23.949 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1 Hostname#b565e20b:443 in_progress transform (satisfied (Path is satisfied), interface: en0)] event: transform:start @0.002s
+2026-10-03 06:39:23.950 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1.1 Hostname#b565e20b:443 initial path ((null))] event: path:start @0.002s
+2026-10-03 06:39:23.950 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1.1 Hostname#b565e20b:443 waiting path (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.003s, uuid: F87A05CA-B9F6-42CE-B463-DFEBF9B8B8B6
+2026-10-03 06:39:23.950 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1.1 Hostname#b565e20b:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] event: resolver:start_dns @0.003s
+2026-10-03 06:39:23.951 Df PikSeek[44052:1b90c] [com.apple.CFNetwork:Default] Task <30C6B016-FFD0-48D0-BE23-0D7F5DBB0AB7>.<3> setting up Connection 7
+2026-10-03 06:39:23.951 Df PikSeek[44052:1b90c] [com.apple.CFNetwork:Default] Connection 0: creating secure tcp or quic connection
+2026-10-03 06:39:23.951 Df PikSeek[44052:1b90c] [com.apple.CFNetwork:Default] Connection 8: enabling TLS
+2026-10-03 06:39:23.951 Df PikSeek[44052:1b90c] [com.apple.CFNetwork:Default] Connection 8: starting, TC(0x0)
+2026-10-03 06:39:23.951 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8 D236D6B7-2867-4C77-8157-5843D30D8F5D Hostname#f350f6e7:443 quic-connection, url: https://user.pikpak.me/v1/user/me, definite, attribution: developer, context: com.apple.CFNetwork.NSURLSession.{ABD4F5DC-260C-45AF-AE7A-4AF70B6204C9}{(null)}{Y}{2}{0x0} (private), proc: 2D9D9BFD-308D-3198-A779-1559E762CD0C, delegated upid: 0] start
+2026-10-03 06:39:23.951 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8 Hostname#f350f6e7:443 initial parent-flow ((null))] event: path:start @0.000s
+2026-10-03 06:39:23.952 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8 Hostname#f350f6e7:443 waiting parent-flow (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.000s, uuid: A5E5BA3E-32B3-4D27-9BF1-F1066232C66C
+2026-10-03 06:39:23.952 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8 Hostname#f350f6e7:443 in_progress parent-flow (satisfied (Path is satisfied), interface: en0)] event: flow:start_connect @0.000s
+2026-10-03 06:39:23.952 Df PikSeek[44052:1b90c] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C8] reporting state preparing
+2026-10-03 06:39:23.952 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8 Hostname#f350f6e7:443 in_progress parent-flow (satisfied (Path is satisfied), interface: en0)] event: flow:start_child @0.000s
+2026-10-03 06:39:23.952 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1 Hostname#f350f6e7:443 initial path ((null))] event: path:start @0.000s
+2026-10-03 06:39:23.952 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1 Hostname#f350f6e7:443 waiting path (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.000s, uuid: A5E5BA3E-32B3-4D27-9BF1-F1066232C66C
+2026-10-03 06:39:23.952 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1 Hostname#f350f6e7:443 in_progress transform (satisfied (Path is satisfied), interface: en0)] event: transform:start @0.001s
+2026-10-03 06:39:23.953 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1.1 Hostname#f350f6e7:443 initial path ((null))] event: path:start @0.001s
+2026-10-03 06:39:23.953 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1.1 Hostname#f350f6e7:443 waiting path (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.002s, uuid: F7854559-5DA9-4D8B-A0EA-5B61DCC8DA62
+2026-10-03 06:39:23.954 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1.1 Hostname#f350f6e7:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] event: resolver:start_dns @0.002s
+2026-10-03 06:39:23.954 Df PikSeek[44052:1b90c] [com.apple.CFNetwork:Default] Task <D44055C2-FEAD-4015-A7FE-51CEF97D3C54>.<3> setting up Connection 8
+2026-10-03 06:39:23.954 Df PikSeek[44052:1b90c] [com.apple.network:connection] nw_endpoint_resolver_update [C6.1.1 Hostname#60d1244e:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] Adding endpoint handler for IPv4#55ca003c:443
+2026-10-03 06:39:23.954 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C6.1.1 Hostname#60d1244e:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] event: resolver:receive_dns @0.028s
+2026-10-03 06:39:23.955 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C6.1.1.1 IPv4#55ca003c:443 initial path ((null))] event: path:start @0.029s
+2026-10-03 06:39:23.955 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C6.1.1.1 IPv4#55ca003c:443 waiting path (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.029s, uuid: 16198BAE-C8E0-4BD5-A991-7EABA5F6AFA8
+2026-10-03 06:39:23.956 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C6.1.1.1 IPv4#55ca003c:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0)] event: flow:start_connect @0.029s
+2026-10-03 06:39:23.970 Df PikSeek[44052:1b90c] [com.apple.network:connection] nw_endpoint_resolver_update [C7.1.1 Hostname#b565e20b:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] Adding endpoint handler for IPv4#00fc623b:443
+2026-10-03 06:39:23.970 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1.1 Hostname#b565e20b:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] event: resolver:receive_dns @0.023s
+2026-10-03 06:39:23.970 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1.1.1 IPv4#00fc623b:443 initial path ((null))] event: path:start @0.023s
+2026-10-03 06:39:23.970 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1.1.1 IPv4#00fc623b:443 waiting path (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.023s, uuid: A9D7CBC1-7421-4954-94D1-A5D48CAFF3CD
+2026-10-03 06:39:23.971 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1.1.1 IPv4#00fc623b:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0)] event: flow:start_connect @0.024s
+2026-10-03 06:39:23.971 Df PikSeek[44052:1b90c] [com.apple.CFNetwork:Default] Connection 7: will be coalesced
+2026-10-03 06:39:23.971 Df PikSeek[44052:1b90c] [com.apple.CFNetwork:Default] TIC Coalescing TCP Conn [7] may go into Connection 3
+2026-10-03 06:39:23.972 E  PikSeek[44052:1b90c] [com.apple.network:connection] nw_endpoint_flow_failed_with_error [C7.1.1.1 IPv4#00fc623b:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0)] already failing, returning
+2026-10-03 06:39:23.972 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1.1.1 IPv4#00fc623b:443 failed socket-flow (satisfied (Path is satisfied), interface: en0)] event: flow:failed_connect @0.025s, error Operation canceled
+2026-10-03 06:39:23.972 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1.1 Hostname#b565e20b:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] event: resolver:children_stall @0.025s
+2026-10-03 06:39:23.972 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1.1 Hostname#b565e20b:443 failed resolver (satisfied (Path is satisfied), interface: en0)] event: resolver:children_failed @0.025s
+2026-10-03 06:39:23.972 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7.1 Hostname#b565e20b:443 failed transform (satisfied (Path is satisfied), interface: en0)] event: transform:children_failed @0.025s
+2026-10-03 06:39:23.973 E  PikSeek[44052:1b90c] [com.apple.network:connection] nw_endpoint_flow_failed_with_error [C7.1.1.1 IPv4#00fc623b:443 cancelled socket-flow ((null))] already failing, returning
+2026-10-03 06:39:23.973 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C7 Hostname#b565e20b:443 failed parent-flow (satisfied (Path is satisfied), interface: en0)] event: flow:child_failed @0.026s
+2026-10-03 06:39:23.973 Df PikSeek[44052:1b90c] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C7] reporting state failed error Operation canceled
+2026-10-03 06:39:23.974 Df PikSeek[44052:1b90c] [com.apple.network:connection] nw_endpoint_resolver_update [C8.1.1 Hostname#f350f6e7:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] Adding endpoint handler for IPv4#e65e6b2e:443
+2026-10-03 06:39:23.974 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1.1 Hostname#f350f6e7:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] event: resolver:receive_dns @0.022s
+2026-10-03 06:39:23.974 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1.1.1 IPv4#e65e6b2e:443 initial path ((null))] event: path:start @0.022s
+2026-10-03 06:39:23.974 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1.1.1 IPv4#e65e6b2e:443 waiting path (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.022s, uuid: EE77E3DC-DF16-4236-BA3C-4AAB33B23806
+2026-10-03 06:39:23.975 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <30C6B016-FFD0-48D0-BE23-0D7F5DBB0AB7>.<3> auth completion disp=1 cred=0x0
+2026-10-03 06:39:23.976 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1.1.1 IPv4#e65e6b2e:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0)] event: flow:start_connect @0.025s
+2026-10-03 06:39:23.977 Df PikSeek[44052:1b90c] [com.apple.CFNetwork:Default] Connection 8: will be coalesced
+2026-10-03 06:39:23.979 Df PikSeek[44052:1b90c] [com.apple.CFNetwork:Default] TIC Coalescing TCP Conn [8] may go into Connection 5
+2026-10-03 06:39:23.980 E  PikSeek[44052:1b90c] [com.apple.network:connection] nw_endpoint_flow_failed_with_error [C8.1.1.1 IPv4#e65e6b2e:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0)] already failing, returning
+2026-10-03 06:39:23.980 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1.1.1 IPv4#e65e6b2e:443 failed socket-flow (satisfied (Path is satisfied), interface: en0)] event: flow:failed_connect @0.028s, error Operation canceled
+2026-10-03 06:39:23.980 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1.1 Hostname#f350f6e7:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] event: resolver:children_stall @0.028s
+2026-10-03 06:39:23.980 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1.1 Hostname#f350f6e7:443 failed resolver (satisfied (Path is satisfied), interface: en0)] event: resolver:children_failed @0.028s
+2026-10-03 06:39:23.980 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8.1 Hostname#f350f6e7:443 failed transform (satisfied (Path is satisfied), interface: en0)] event: transform:children_failed @0.028s
+2026-10-03 06:39:23.980 E  PikSeek[44052:1b90c] [com.apple.network:connection] nw_endpoint_flow_failed_with_error [C8.1.1.1 IPv4#e65e6b2e:443 cancelled socket-flow ((null))] already failing, returning
+2026-10-03 06:39:23.980 Df PikSeek[44052:1b90c] [com.apple.network:connection] [C8 Hostname#f350f6e7:443 failed parent-flow (satisfied (Path is satisfied), interface: en0)] event: flow:child_failed @0.028s
+2026-10-03 06:39:23.980 Df PikSeek[44052:1b90c] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C8] reporting state failed error Operation canceled
+2026-10-03 06:39:23.980 Df PikSeek[44052:1b90c] [com.apple.securityd:trust] (Trust 0x120f32400) No pending evals, starting
+2026-10-03 06:39:23.980 A  PikSeek[44052:1b90c] (Security) SecTrustEvaluateIfNecessaryFastAsync
+2026-10-03 06:39:23.980 Df PikSeek[44052:1b90d] [com.apple.CFNetwork:Default] Task <D44055C2-FEAD-4015-A7FE-51CEF97D3C54>.<3> auth completion disp=1 cred=0x0
+2026-10-03 06:39:23.981 Df PikSeek[44052:1b90c] [com.apple.xpc:connection] [0x102177e80] activating connection: mach=true listener=false peer=false name=com.apple.trustd
+2026-10-03 06:39:23.981 Df PikSeek[44052:1b90c] [com.apple.securityd:trust] (Trust 0x120f32400) Completed async eval kickoff
+2026-10-03 06:39:23.981 Df PikSeek[44052:1b90c] [com.apple.securityd:trust] (Trust 0x120f321c0) No pending evals, starting
+2026-10-03 06:39:23.981 A  PikSeek[44052:1b90c] (Security) SecTrustEvaluateIfNecessaryFastAsync
+2026-10-03 06:39:23.981 Df PikSeek[44052:1b90c] [com.apple.xpc:connection] [0x102177c00] activating connection: mach=true listener=false peer=false name=com.apple.trustd
+2026-10-03 06:39:23.982 Df PikSeek[44052:1b90c] [com.apple.securityd:trust] (Trust 0x120f321c0) Completed async eval kickoff
+2026-10-03 06:39:23.983 Df PikSeek[44052:1b90d] [com.apple.securityd:trust] (Trust 0x120f32400) trustd returned 4
+2026-10-03 06:39:23.983 Df PikSeek[44052:1b90d] [com.apple.CFNetwork:Default] System Trust Evaluation yielded status(0)
+2026-10-03 06:39:23.983 Df PikSeek[44052:1b90d] [com.apple.securityd:trust] (Trust 0x120f32a00) No pending evals, starting
+2026-10-03 06:39:23.983 A  PikSeek[44052:1b90d] (Security) SecTrustEvaluateIfNecessaryFastAsync
+2026-10-03 06:39:23.984 Df PikSeek[44052:1b90d] [com.apple.xpc:connection] [0x102177ac0] activating connection: mach=true listener=false peer=false name=com.apple.trustd
+2026-10-03 06:39:23.985 Df PikSeek[44052:1b90d] [com.apple.securityd:trust] (Trust 0x120f32a00) Completed async eval kickoff
+2026-10-03 06:39:23.985 Df PikSeek[44052:1b90d] [com.apple.xpc:connection] [0x102177e80] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-03 06:39:23.985 Df PikSeek[44052:1b90d] [com.apple.securityd:trust] (Trust 0x120f321c0) trustd returned 4
+2026-10-03 06:39:23.985 Df PikSeek[44052:1b90d] [com.apple.CFNetwork:Default] System Trust Evaluation yielded status(0)
+2026-10-03 06:39:23.985 Df PikSeek[44052:1b90d] [com.apple.securityd:trust] (Trust 0x120f32880) No pending evals, starting
+2026-10-03 06:39:23.985 A  PikSeek[44052:1b90d] (Security) SecTrustEvaluateIfNecessaryFastAsync
+2026-10-03 06:39:23.986 Df PikSeek[44052:1b90d] [com.apple.xpc:connection] [0x102177e80] activating connection: mach=true listener=false peer=false name=com.apple.trustd
+2026-10-03 06:39:23.986 Df PikSeek[44052:1b90d] [com.apple.securityd:trust] (Trust 0x120f32880) Completed async eval kickoff
+2026-10-03 06:39:23.986 Df PikSeek[44052:1b90d] [com.apple.xpc:connection] [0x102177c00] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-03 06:39:23.986 Df PikSeek[44052:1ba46] [com.apple.securityd:trust] (Trust 0x120f32a00) trustd returned 4
+2026-10-03 06:39:23.986 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 7: TLS Trust result 0
+2026-10-03 06:39:23.986 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 7: coalesced with Connection 3
+2026-10-03 06:39:23.986 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 7: TLS handshake complete
+2026-10-03 06:39:23.986 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_protocol_metadata_internal_block_invoke [C7] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+2026-10-03 06:39:23.987 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_protocol_metadata_internal_block_invoke [C7] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+2026-10-03 06:39:23.987 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_protocol_metadata_internal_block_invoke [C7] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+2026-10-03 06:39:23.987 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_protocol_metadata_internal_block_invoke [C7] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+2026-10-03 06:39:23.987 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_connected_local_endpoint_block_invoke [C7] Client called nw_connection_copy_connected_local_endpoint on unconnected nw_connection
+2026-10-03 06:39:23.987 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_connected_path_block_invoke [C7] Client called nw_connection_copy_connected_path on unconnected nw_connection
+2026-10-03 06:39:23.987 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_connected_remote_endpoint_block_invoke [C7] Client called nw_connection_copy_connected_remote_endpoint on unconnected nw_connection
+2026-10-03 06:39:23.987 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 7: ready C(N) E(N)
+2026-10-03 06:39:23.987 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_protocol_metadata_internal_block_invoke [C7] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+2026-10-03 06:39:23.987 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <30C6B016-FFD0-48D0-BE23-0D7F5DBB0AB7>.<3> can retry(Y) with reason(9) for error [4:-2200]
+2026-10-03 06:39:23.988 Df PikSeek[44052:1ba46] [com.apple.xpc:connection] [0x102177ac0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-03 06:39:23.988 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_protocol_metadata_internal_block_invoke [C7] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+2026-10-03 06:39:23.988 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_flow_add_write_request [C7 Hostname#b565e20b:443 failed parent-flow (satisfied (Path is satisfied), interface: en0)] cannot accept write requests
+2026-10-03 06:39:23.988 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_write_request_report [C7] Send failed with error "Socket is not connected"
+2026-10-03 06:39:23.988 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_metadata_block_invoke [C7] Client called nw_connection_copy_metadata on unconnected nw_connection
+2026-10-03 06:39:23.988 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 7: cleaning up
+2026-10-03 06:39:23.988 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C7 E5B31B21-E6EC-4F36-8124-5514EB1BCA90 Hostname#b565e20b:443 quic-connection, url: https://user.pikpakdrive.com/v1/user/me, definite, attribution: developer] cancel
+2026-10-03 06:39:23.988 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C7 Hostname#b565e20b:443 quic-connection, url: https://user.pikpakdrive.com/v1/user/me, definite, attribution: developer] cancelled
+2026-10-03 06:39:23.988 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C7] reporting state cancelled error Operation canceled
+2026-10-03 06:39:23.988 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C3] event: client:connection_reused @1.304s
+2026-10-03 06:39:23.988 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_protocol_socket_notify [C3.1.1.1:3] nw_protocol_notification_type_connection_idle is false
+2026-10-03 06:39:23.988 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <30C6B016-FFD0-48D0-BE23-0D7F5DBB0AB7>.<3> now using Connection 3
+2026-10-03 06:39:23.988 Df PikSeek[44052:1ba46] [com.apple.securityd:trust] (Trust 0x120f32880) trustd returned 4
+2026-10-03 06:39:23.988 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 8: TLS Trust result 0
+2026-10-03 06:39:23.989 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 8: coalesced with Connection 5
+2026-10-03 06:39:23.989 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 8: TLS handshake complete
+2026-10-03 06:39:23.989 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_protocol_metadata_internal_block_invoke [C8] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+2026-10-03 06:39:23.989 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_protocol_metadata_internal_block_invoke [C8] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+2026-10-03 06:39:23.989 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_protocol_metadata_internal_block_invoke [C8] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+2026-10-03 06:39:23.989 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_protocol_metadata_internal_block_invoke [C8] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+2026-10-03 06:39:23.989 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_connected_local_endpoint_block_invoke [C8] Client called nw_connection_copy_connected_local_endpoint on unconnected nw_connection
+2026-10-03 06:39:23.989 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_connected_path_block_invoke [C8] Client called nw_connection_copy_connected_path on unconnected nw_connection
+2026-10-03 06:39:23.989 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_connected_remote_endpoint_block_invoke [C8] Client called nw_connection_copy_connected_remote_endpoint on unconnected nw_connection
+2026-10-03 06:39:23.989 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 8: ready C(N) E(N)
+2026-10-03 06:39:23.989 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_protocol_metadata_internal_block_invoke [C8] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+2026-10-03 06:39:23.989 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <D44055C2-FEAD-4015-A7FE-51CEF97D3C54>.<3> can retry(Y) with reason(9) for error [4:-2200]
+2026-10-03 06:39:23.989 Df PikSeek[44052:1ba46] [com.apple.xpc:connection] [0x102177e80] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-03 06:39:23.989 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_protocol_metadata_internal_block_invoke [C8] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+2026-10-03 06:39:23.989 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_flow_add_write_request [C8 Hostname#f350f6e7:443 failed parent-flow (satisfied (Path is satisfied), interface: en0)] cannot accept write requests
+2026-10-03 06:39:23.989 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_write_request_report [C8] Send failed with error "Socket is not connected"
+2026-10-03 06:39:23.989 E  PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_copy_metadata_block_invoke [C8] Client called nw_connection_copy_metadata on unconnected nw_connection
+2026-10-03 06:39:23.989 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 8: cleaning up
+2026-10-03 06:39:23.990 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C8 D236D6B7-2867-4C77-8157-5843D30D8F5D Hostname#f350f6e7:443 quic-connection, url: https://user.pikpak.me/v1/user/me, definite, attribution: developer] cancel
+2026-10-03 06:39:23.990 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C8 Hostname#f350f6e7:443 quic-connection, url: https://user.pikpak.me/v1/user/me, definite, attribution: developer] cancelled
+2026-10-03 06:39:23.990 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C8] reporting state cancelled error Operation canceled
+2026-10-03 06:39:23.990 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <30C6B016-FFD0-48D0-BE23-0D7F5DBB0AB7>.<3> sent request, body N 0
+2026-10-03 06:39:23.990 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C5] event: client:connection_reused @1.291s
+2026-10-03 06:39:23.991 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_protocol_socket_notify [C5.1.1.1:3] nw_protocol_notification_type_connection_idle is false
+2026-10-03 06:39:23.991 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <D44055C2-FEAD-4015-A7FE-51CEF97D3C54>.<3> now using Connection 5
+2026-10-03 06:39:23.991 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <D44055C2-FEAD-4015-A7FE-51CEF97D3C54>.<3> sent request, body N 0
+2026-10-03 06:39:24.106 Df PikSeek[44052:1b90d] [com.apple.CFNetwork:Default] Task <D89BAE35-12AB-4FCB-A76B-86B3FA8F0C06>.<2> received response, status 401 content K
+2026-10-03 06:39:24.107 Df PikSeek[44052:1b90d] [com.apple.CFNetwork:Default] Task <D89BAE35-12AB-4FCB-A76B-86B3FA8F0C06>.<2> done using Connection 2
+2026-10-03 06:39:24.107 Df PikSeek[44052:1b90d] [com.apple.network:connection] [C2] event: client:connection_idle @1.426s
+2026-10-03 06:39:24.107 Df PikSeek[44052:1b90d] [com.apple.network:connection] nw_protocol_socket_notify [C2.1.1.1:3] nw_protocol_notification_type_connection_idle is true
+2026-10-03 06:39:24.107 Df PikSeek[44052:1b90d] [com.apple.CFNetwork:Default] Task <D89BAE35-12AB-4FCB-A76B-86B3FA8F0C06>.<2> response ended
+2026-10-03 06:39:24.109 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Summary] Task <D89BAE35-12AB-4FCB-A76B-86B3FA8F0C06>.<2> summary for task success {transaction_duration_ms=230, response_status=401, connection=2, reused=1, reused_after_ms=7, request_start_ms=1, request_duration_ms=0, response_start_ms=228, response_duration_ms=1, request_bytes=30, request_throughput_kbps=1025, response_bytes=375, response_throughput_kbps=2006, cache_hit=false}
+2026-10-03 06:39:24.111 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <D89BAE35-12AB-4FCB-A76B-86B3FA8F0C06>.<2> finished successfully
+2026-10-03 06:39:24.115 Df PikSeek[44052:1b92b] [com.apple.CFNetwork:Default] Task <95D07AEB-4A62-479A-84FC-6CFAEDABD5C7>.<3> resuming, timeouts(30.0, 604800.0) qos(0x15) voucher((null)) activity(00000000-0000-0000-0000-000000000000)
+2026-10-03 06:39:24.123 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 0: creating secure tcp or quic connection
+2026-10-03 06:39:24.126 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 9: enabling TLS
+2026-10-03 06:39:24.126 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 9: starting, TC(0x0)
+2026-10-03 06:39:24.126 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9 82EB98B7-D9AB-408B-8270-F0754DBC1A5D Hostname#0d3eda01:443 quic-connection, url: https://user.mypikpak.net/v1/user/me, definite, attribution: developer, context: com.apple.CFNetwork.NSURLSession.{28BCC295-399A-4A32-A4FE-328A40FD1618}{(null)}{Y}{2}{0x0} (private), proc: 2D9D9BFD-308D-3198-A779-1559E762CD0C, delegated upid: 0] start
+2026-10-03 06:39:24.138 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9 Hostname#0d3eda01:443 initial parent-flow ((null))] event: path:start @0.008s
+2026-10-03 06:39:24.140 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9 Hostname#0d3eda01:443 waiting parent-flow (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.010s, uuid: D123806D-C0B6-48C3-B9BE-4EB9E40A9E5F
+2026-10-03 06:39:24.142 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9 Hostname#0d3eda01:443 in_progress parent-flow (satisfied (Path is satisfied), interface: en0)] event: flow:start_connect @0.012s
+2026-10-03 06:39:24.143 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C9] reporting state preparing
+2026-10-03 06:39:24.146 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9 Hostname#0d3eda01:443 in_progress parent-flow (satisfied (Path is satisfied), interface: en0)] event: flow:start_child @0.017s
+2026-10-03 06:39:24.147 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1 Hostname#0d3eda01:443 initial path ((null))] event: path:start @0.017s
+2026-10-03 06:39:24.147 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1 Hostname#0d3eda01:443 waiting path (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.018s, uuid: D123806D-C0B6-48C3-B9BE-4EB9E40A9E5F
+2026-10-03 06:39:24.147 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1 Hostname#0d3eda01:443 in_progress transform (satisfied (Path is satisfied), interface: en0)] event: transform:start @0.018s
+2026-10-03 06:39:24.147 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1.1 Hostname#0d3eda01:443 initial path ((null))] event: path:start @0.018s
+2026-10-03 06:39:24.148 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1.1 Hostname#0d3eda01:443 waiting path (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.018s, uuid: 01818F4F-F732-4FB9-95B8-AE172268218E
+2026-10-03 06:39:24.148 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1.1 Hostname#0d3eda01:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] event: resolver:start_dns @0.018s
+2026-10-03 06:39:24.148 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <95D07AEB-4A62-479A-84FC-6CFAEDABD5C7>.<3> setting up Connection 9
+2026-10-03 06:39:24.180 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_socket_handle_socket_event [C6.1.1.1:3] Socket received CONNECTED event
+2026-10-03 06:39:24.180 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_flow_connected [C6.1.1.1 IPv4#55ca003c:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0)] Transport protocol connected (socket)
+2026-10-03 06:39:24.180 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C6.1.1.1 IPv4#55ca003c:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0)] event: flow:finish_transport @0.254s
+2026-10-03 06:39:24.181 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_session_apply_protocol_options_for_transport_block_invoke_2(2367) [C6.1.1.1:2][0x120fd0f60] TLS configured [server(0) min_version(0x0303) max_version(0x0304) name(redacted) tickets(false) false_start(false) enforce_ev(false) enforce_ats(false) ats_non_pfs_ciphersuite_allowed(false) cc_mode_enforced(false) ech(false) pqtls(true), pake(false) skip_ats_trust(false)]
+2026-10-03 06:39:24.181 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2806) [C6.1.1.1:2][0x120fd0f60] Client handshake started
+2026-10-03 06:39:24.181 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client enter_early_data
+2026-10-03 06:39:24.182 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client read_server_hello
+2026-10-03 06:39:24.222 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <30C6B016-FFD0-48D0-BE23-0D7F5DBB0AB7>.<3> received response, status 401 content K
+2026-10-03 06:39:24.223 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <30C6B016-FFD0-48D0-BE23-0D7F5DBB0AB7>.<3> done using Connection 3
+2026-10-03 06:39:24.223 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C3] event: client:connection_idle @1.539s
+2026-10-03 06:39:24.223 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_protocol_socket_notify [C3.1.1.1:3] nw_protocol_notification_type_connection_idle is true
+2026-10-03 06:39:24.223 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <D44055C2-FEAD-4015-A7FE-51CEF97D3C54>.<3> received response, status 401 content K
+2026-10-03 06:39:24.223 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <D44055C2-FEAD-4015-A7FE-51CEF97D3C54>.<3> done using Connection 5
+2026-10-03 06:39:24.223 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C5] event: client:connection_idle @1.524s
+2026-10-03 06:39:24.224 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_protocol_socket_notify [C5.1.1.1:3] nw_protocol_notification_type_connection_idle is true
+2026-10-03 06:39:24.225 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <30C6B016-FFD0-48D0-BE23-0D7F5DBB0AB7>.<3> response ended
+2026-10-03 06:39:24.226 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <D44055C2-FEAD-4015-A7FE-51CEF97D3C54>.<3> response ended
+2026-10-03 06:39:24.227 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Summary] Task <D44055C2-FEAD-4015-A7FE-51CEF97D3C54>.<3> summary for task success {transaction_duration_ms=290, response_status=401, connection=5, reused=1, reused_after_ms=74, request_start_ms=54, request_duration_ms=0, response_start_ms=286, response_duration_ms=2, request_bytes=39, request_throughput_kbps=2619, response_bytes=535, response_throughput_kbps=1752, cache_hit=false}
+2026-10-03 06:39:24.227 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <D44055C2-FEAD-4015-A7FE-51CEF97D3C54>.<3> finished successfully
+2026-10-03 06:39:24.227 Df PikSeek[44052:1b90d] [com.apple.CFNetwork:Summary] Task <30C6B016-FFD0-48D0-BE23-0D7F5DBB0AB7>.<3> summary for task success {transaction_duration_ms=302, response_status=401, connection=3, reused=1, reused_after_ms=79, request_start_ms=64, request_duration_ms=0, response_start_ms=297, response_duration_ms=2, request_bytes=43, request_throughput_kbps=1900, response_bytes=535, response_throughput_kbps=1488, cache_hit=false}
+2026-10-03 06:39:24.227 Df PikSeek[44052:1b90d] [com.apple.CFNetwork:Default] Task <30C6B016-FFD0-48D0-BE23-0D7F5DBB0AB7>.<3> finished successfully
+2026-10-03 06:39:24.232 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 5: cleaning up
+2026-10-03 06:39:24.232 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C5 D621F9E9-831E-45FB-B696-C5D26FBA4B32 Hostname#02a2ad6b:443 quic-connection, url: https://api-drive.pikpak.me/drive/v1/about, definite, attribution: developer] cancel
+2026-10-03 06:39:24.232 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C5 D621F9E9-831E-45FB-B696-C5D26FBA4B32 Hostname#02a2ad6b:443 quic-connection, url: https://api-drive.pikpak.me/drive/v1/about, definite, attribution: developer] cancelled
+	[C5.1.1.1 D707D68F-2BD3-4D70-ADC3-CC8625B74CD0 192.168.64.8:50620<->IPv4#e65e6b2e:443]
+	Connected Path: satisfied (Path is satisfied), interface: en0
+	Privacy Stance: Not Eligible
+	Duration: 1.533s, DNS @0.001s took 0.021s, TCP @0.023s took 0.223s, TLS 1.2 took 0.495s
+	bytes in/out: 5966/2046, packets in/out: 6/8, rtt: 0.224s, retransmitted bytes: 0, out-of-order bytes: 0
+	ecn packets sent/acked/marked/lost: 8/7/0/0
+2026-10-03 06:39:24.236 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C5] reporting state cancelled
+2026-10-03 06:39:24.236 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 5: done
+2026-10-03 06:39:24.237 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 3: cleaning up
+2026-10-03 06:39:24.237 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C3 A04C3511-EA39-4DE6-86FB-1D07018DFBD8 Hostname#cdc012cd:443 quic-connection, url: https://api-drive.pikpakdrive.com/drive/v1/about, definite, attribution: developer] cancel
+2026-10-03 06:39:24.238 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C3 A04C3511-EA39-4DE6-86FB-1D07018DFBD8 Hostname#cdc012cd:443 quic-connection, url: https://api-drive.pikpakdrive.com/drive/v1/about, definite, attribution: developer] cancelled
+	[C3.1.1.1 A27467A7-A2E3-4EEB-93AD-C253677FF175 192.168.64.8:50619<->IPv4#00fc623b:443]
+	Connected Path: satisfied (Path is satisfied), interface: en0
+	Privacy Stance: Not Eligible
+	Duration: 1.553s, DNS @0.002s took 0.020s, TCP @0.023s took 0.224s, TLS 1.2 took 0.507s
+	bytes in/out: 5982/2060, packets in/out: 7/8, rtt: 0.222s, retransmitted bytes: 0, out-of-order bytes: 0
+	ecn packets sent/acked/marked/lost: 8/7/0/0
+2026-10-03 06:39:24.238 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C3] reporting state cancelled
+2026-10-03 06:39:24.238 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 3: done
+2026-10-03 06:39:24.369 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_endpoint_resolver_update [C9.1.1 Hostname#0d3eda01:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] Adding endpoint handler for IPv4#ff9c2411:443
+2026-10-03 06:39:24.369 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1.1 Hostname#0d3eda01:443 in_progress resolver (satisfied (Path is satisfied), interface: en0)] event: resolver:receive_dns @0.240s
+2026-10-03 06:39:24.369 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1.1.1 IPv4#ff9c2411:443 initial path ((null))] event: path:start @0.240s
+2026-10-03 06:39:24.370 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1.1.1 IPv4#ff9c2411:443 waiting path (satisfied (Path is satisfied), interface: en0)] event: path:satisfied @0.240s, uuid: 04D97875-6B94-40BF-BA1F-30A8C218B446
+2026-10-03 06:39:24.370 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1.1.1 IPv4#ff9c2411:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0)] event: flow:start_connect @0.240s
+2026-10-03 06:39:24.409 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client read_server_certificate
+2026-10-03 06:39:24.409 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client read_certificate_status
+2026-10-03 06:39:24.409 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client verify_server_certificate
+2026-10-03 06:39:24.409 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_evaluate_trust_async(2249) [C6.1.1.1:2][0x120fd0f60] Performing external trust evaluation
+2026-10-03 06:39:24.409 A  PikSeek[44052:1ba46] (Security) SecKeyCopyPublicBytes
+2026-10-03 06:39:24.409 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_evaluate_trust_async_external(2234) [C6.1.1.1:2][0x120fd0f60] Asyncing for external verify block
+2026-10-03 06:39:24.409 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 6: asked to evaluate TLS Trust
+2026-10-03 06:39:24.410 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <28C23962-A831-401F-895B-33E6E6CFAADF>.<3> auth completion disp=1 cred=0x0
+2026-10-03 06:39:24.410 Df PikSeek[44052:1ba46] [com.apple.securityd:trust] (Trust 0x120f312c0) No pending evals, starting
+2026-10-03 06:39:24.410 A  PikSeek[44052:1ba46] (Security) SecTrustEvaluateIfNecessaryFastAsync
+2026-10-03 06:39:24.410 Df PikSeek[44052:1ba46] [com.apple.xpc:connection] [0x1023be300] activating connection: mach=true listener=false peer=false name=com.apple.trustd
+2026-10-03 06:39:24.411 Df PikSeek[44052:1ba46] [com.apple.securityd:trust] (Trust 0x120f312c0) Completed async eval kickoff
+2026-10-03 06:39:24.413 Df PikSeek[44052:1b908] [com.apple.securityd:trust] (Trust 0x120f312c0) trustd returned 4
+2026-10-03 06:39:24.413 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Default] System Trust Evaluation yielded status(0)
+2026-10-03 06:39:24.413 Df PikSeek[44052:1b908] [com.apple.securityd:trust] (Trust 0x120f31680) No pending evals, starting
+2026-10-03 06:39:24.414 A  PikSeek[44052:1b908] (Security) SecTrustEvaluateIfNecessaryFastAsync
+2026-10-03 06:39:24.414 Df PikSeek[44052:1b908] [com.apple.xpc:connection] [0x1023bfe80] activating connection: mach=true listener=false peer=false name=com.apple.trustd
+2026-10-03 06:39:24.414 Df PikSeek[44052:1b908] [com.apple.securityd:trust] (Trust 0x120f31680) Completed async eval kickoff
+2026-10-03 06:39:24.414 Df PikSeek[44052:1b908] [com.apple.xpc:connection] [0x1023be300] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-03 06:39:24.422 Df PikSeek[44052:1ba46] [com.apple.securityd:trust] (Trust 0x120f31680) trustd returned 4
+2026-10-03 06:39:24.422 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 6: TLS Trust result 0
+2026-10-03 06:39:24.422 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_evaluate_trust_async_external_block_invoke_3(2148) [C6.1.1.1:2][0x120fd0f60] Returning from external verify block with result: true
+2026-10-03 06:39:24.422 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_certificate_verify_callback(2430) [C6.1.1.1:2][0x120fd0f60] Certificate verification result: OK
+2026-10-03 06:39:24.422 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client read_server_key_exchange
+2026-10-03 06:39:24.422 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client read_certificate_request
+2026-10-03 06:39:24.422 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client read_server_hello_done
+2026-10-03 06:39:24.423 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client send_client_certificate
+2026-10-03 06:39:24.423 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client send_client_key_exchange
+2026-10-03 06:39:24.423 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client send_client_certificate_verify
+2026-10-03 06:39:24.423 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client send_client_finished
+2026-10-03 06:39:24.423 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client finish_flight
+2026-10-03 06:39:24.423 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client read_session_ticket
+2026-10-03 06:39:24.424 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client process_change_cipher_spec
+2026-10-03 06:39:24.424 Df PikSeek[44052:1ba46] [com.apple.xpc:connection] [0x1023bfe80] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-03 06:39:24.595 Df PikSeek[44052:1b908] [com.apple.network:connection] nw_socket_handle_socket_event [C9.1.1.1:3] Socket received CONNECTED event
+2026-10-03 06:39:24.595 Df PikSeek[44052:1b908] [com.apple.network:connection] nw_flow_connected [C9.1.1.1 IPv4#ff9c2411:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0)] Transport protocol connected (socket)
+2026-10-03 06:39:24.595 Df PikSeek[44052:1b908] [com.apple.network:connection] [C9.1.1.1 IPv4#ff9c2411:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0)] event: flow:finish_transport @0.466s
+2026-10-03 06:39:24.596 Df PikSeek[44052:1b908] [com.apple.network:boringssl] boringssl_session_apply_protocol_options_for_transport_block_invoke_2(2367) [C9.1.1.1:2][0x120fd1e60] TLS configured [server(0) min_version(0x0303) max_version(0x0304) name(redacted) tickets(false) false_start(false) enforce_ev(false) enforce_ats(false) ats_non_pfs_ciphersuite_allowed(false) cc_mode_enforced(false) ech(false) pqtls(true), pake(false) skip_ats_trust(false)]
+2026-10-03 06:39:24.597 Df PikSeek[44052:1b908] [com.apple.network:boringssl] boringssl_context_info_handler(2806) [C9.1.1.1:2][0x120fd1e60] Client handshake started
+2026-10-03 06:39:24.597 Df PikSeek[44052:1b908] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client enter_early_data
+2026-10-03 06:39:24.597 Df PikSeek[44052:1b908] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client read_server_hello
+2026-10-03 06:39:24.655 Df PikSeek[44052:1b908] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client read_server_finished
+2026-10-03 06:39:24.655 Df PikSeek[44052:1b908] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client finish_client_handshake
+2026-10-03 06:39:24.655 A  PikSeek[44052:1b908] (Security) SecKeyCopyPublicBytes
+2026-10-03 06:39:24.655 Df PikSeek[44052:1b908] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C6.1.1.1:2][0x120fd0f60] Client handshake state: TLS client done
+2026-10-03 06:39:24.655 Df PikSeek[44052:1b908] [com.apple.network:boringssl] boringssl_context_info_handler(2812) [C6.1.1.1:2][0x120fd0f60] Client handshake done
+2026-10-03 06:39:24.656 A  PikSeek[44052:1b908] (Security) SecKeyCopyPublicBytes
+2026-10-03 06:39:24.656 Df PikSeek[44052:1b908] [com.apple.network:boringssl] nw_protocol_boringssl_signal_connected(895) [C6.1.1.1:2][0x120fd0f60] TLS connected [server(0) version(0x0303) ciphersuite(TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) group(0x001d) signature_alg(0x0804) alpn(h2) resumed(0) offered_ticket(0) in_early_data(0) early_data_accepted(0) false_started(0) ocsp_received(0) sct_received(0) connect_time(475ms) flight_time(460ms) rtt(228ms) write_stalls(0) read_stalls(4) pake(0x0000)]
+2026-10-03 06:39:24.656 Df PikSeek[44052:1b908] [com.apple.network:connection] nw_flow_connected [C6.1.1.1 IPv4#55ca003c:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0)] Output protocol connected (CFNetworkConnection-2289428038)
+2026-10-03 06:39:24.656 Df PikSeek[44052:1b908] [com.apple.network:connection] [C6.1.1.1 IPv4#55ca003c:443 ready socket-flow (satisfied (Path is satisfied), interface: en0)] event: flow:child_finish_connect @0.730s
+2026-10-03 06:39:24.656 Df PikSeek[44052:1b908] [com.apple.network:connection] [C6.1.1 Hostname#60d1244e:443 ready resolver (satisfied (Path is satisfied), interface: en0)] event: flow:child_finish_connect @0.730s
+2026-10-03 06:39:24.656 Df PikSeek[44052:1b908] [com.apple.network:connection] [C6.1 Hostname#60d1244e:443 ready transform (satisfied (Path is satisfied), interface: en0)] event: flow:child_finish_connect @0.730s
+2026-10-03 06:39:24.656 Df PikSeek[44052:1b908] [com.apple.network:connection] nw_flow_connected [C6 IPv4#55ca003c:443 in_progress parent-flow (satisfied (Path is satisfied), interface: en0)] Output protocol connected (endpoint_flow)
+2026-10-03 06:39:24.656 Df PikSeek[44052:1b908] [com.apple.network:connection] [C6 IPv4#55ca003c:443 ready parent-flow (satisfied (Path is satisfied), interface: en0)] event: flow:finish_connect @0.730s
+2026-10-03 06:39:24.656 Df PikSeek[44052:1b908] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C6] reporting state ready
+2026-10-03 06:39:24.656 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Default] Connection 6: connected successfully
+2026-10-03 06:39:24.657 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Default] Connection 6: TLS handshake complete
+2026-10-03 06:39:24.657 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Default] Connection 6: ready C(N) E(N)
+2026-10-03 06:39:24.657 Df PikSeek[44052:1b908] [com.apple.network:connection] [C6] event: client:connection_reused @0.731s
+2026-10-03 06:39:24.657 Df PikSeek[44052:1b908] [com.apple.network:connection] nw_protocol_socket_notify [C6.1.1.1:3] nw_protocol_notification_type_connection_idle is false
+2026-10-03 06:39:24.657 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Default] Task <28C23962-A831-401F-895B-33E6E6CFAADF>.<3> now using Connection 6
+2026-10-03 06:39:24.658 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Default] Task <28C23962-A831-401F-895B-33E6E6CFAADF>.<3> sent request, body N 0
+2026-10-03 06:39:24.822 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client read_server_certificate
+2026-10-03 06:39:24.822 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client read_certificate_status
+2026-10-03 06:39:24.822 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client verify_server_certificate
+2026-10-03 06:39:24.822 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_evaluate_trust_async(2249) [C9.1.1.1:2][0x120fd1e60] Performing external trust evaluation
+2026-10-03 06:39:24.822 A  PikSeek[44052:1ba46] (Security) SecKeyCopyPublicBytes
+2026-10-03 06:39:24.822 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_evaluate_trust_async_external(2234) [C9.1.1.1:2][0x120fd1e60] Asyncing for external verify block
+2026-10-03 06:39:24.822 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 9: asked to evaluate TLS Trust
+2026-10-03 06:39:24.822 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <95D07AEB-4A62-479A-84FC-6CFAEDABD5C7>.<3> auth completion disp=1 cred=0x0
+2026-10-03 06:39:24.822 Df PikSeek[44052:1ba46] [com.apple.securityd:trust] (Trust 0x120f303c0) No pending evals, starting
+2026-10-03 06:39:24.822 A  PikSeek[44052:1ba46] (Security) SecTrustEvaluateIfNecessaryFastAsync
+2026-10-03 06:39:24.822 Df PikSeek[44052:1ba46] [com.apple.xpc:connection] [0x1023bfe80] activating connection: mach=true listener=false peer=false name=com.apple.trustd
+2026-10-03 06:39:24.823 Df PikSeek[44052:1ba46] [com.apple.securityd:trust] (Trust 0x120f303c0) Completed async eval kickoff
+2026-10-03 06:39:24.825 Df PikSeek[44052:1b908] [com.apple.securityd:trust] (Trust 0x120f303c0) trustd returned 4
+2026-10-03 06:39:24.825 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Default] System Trust Evaluation yielded status(0)
+2026-10-03 06:39:24.825 Df PikSeek[44052:1b908] [com.apple.securityd:trust] (Trust 0x120f306c0) No pending evals, starting
+2026-10-03 06:39:24.825 A  PikSeek[44052:1b908] (Security) SecTrustEvaluateIfNecessaryFastAsync
+2026-10-03 06:39:24.825 Df PikSeek[44052:1b908] [com.apple.xpc:connection] [0x1023be300] activating connection: mach=true listener=false peer=false name=com.apple.trustd
+2026-10-03 06:39:24.825 Df PikSeek[44052:1b908] [com.apple.securityd:trust] (Trust 0x120f306c0) Completed async eval kickoff
+2026-10-03 06:39:24.825 Df PikSeek[44052:1b908] [com.apple.xpc:connection] [0x1023bfe80] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.securityd:trust] (Trust 0x120f306c0) trustd returned 4
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 9: TLS Trust result 0
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_evaluate_trust_async_external_block_invoke_3(2148) [C9.1.1.1:2][0x120fd1e60] Returning from external verify block with result: true
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_certificate_verify_callback(2430) [C9.1.1.1:2][0x120fd1e60] Certificate verification result: OK
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client read_server_key_exchange
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client read_certificate_request
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client read_server_hello_done
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client send_client_certificate
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client send_client_key_exchange
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client send_client_certificate_verify
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client send_client_finished
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client finish_flight
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client read_session_ticket
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client process_change_cipher_spec
+2026-10-03 06:39:24.827 Df PikSeek[44052:1ba46] [com.apple.xpc:connection] [0x1023be300] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-03 06:39:24.883 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Default] Task <28C23962-A831-401F-895B-33E6E6CFAADF>.<3> received response, status 401 content K
+2026-10-03 06:39:24.883 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Default] Task <28C23962-A831-401F-895B-33E6E6CFAADF>.<3> done using Connection 6
+2026-10-03 06:39:24.883 Df PikSeek[44052:1b908] [com.apple.network:connection] [C6] event: client:connection_idle @0.957s
+2026-10-03 06:39:24.883 Df PikSeek[44052:1b908] [com.apple.network:connection] nw_protocol_socket_notify [C6.1.1.1:3] nw_protocol_notification_type_connection_idle is true
+2026-10-03 06:39:24.883 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Default] Task <28C23962-A831-401F-895B-33E6E6CFAADF>.<3> response ended
+2026-10-03 06:39:24.883 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Summary] Task <28C23962-A831-401F-895B-33E6E6CFAADF>.<3> summary for task success {transaction_duration_ms=962, response_status=401, connection=6, protocol="h2", domain_lookup_duration_ms=12, connect_duration_ms=701, secure_connection_duration_ms=475, private_relay=false, request_start_ms=736, request_duration_ms=0, response_start_ms=962, response_duration_ms=0, request_bytes=111, request_throughput_kbps=9866, response_bytes=525, response_throughput_kbps=17144, cache_hit=false}
+2026-10-03 06:39:24.883 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Default] Task <28C23962-A831-401F-895B-33E6E6CFAADF>.<3> finished successfully
+2026-10-03 06:39:24.884 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 1: cleaning up
+2026-10-03 06:39:24.884 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C1 B6D5701E-5D4F-404D-8F25-6569CB3FD8F0 Hostname#80678a87:443 quic-connection, url: https://api-drive.mypikpak.com/drive/v1/about, definite, attribution: developer] cancel
+2026-10-03 06:39:24.884 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C1 B6D5701E-5D4F-404D-8F25-6569CB3FD8F0 Hostname#80678a87:443 quic-connection, url: https://api-drive.mypikpak.com/drive/v1/about, definite, attribution: developer] cancelled
+	[C1.1.1.1 6610F156-F808-4B46-82C4-BB285365A921 192.168.64.8:50617<->IPv4#c4d46973:443]
+	Connected Path: satisfied (Path is satisfied), interface: en0
+	Privacy Stance: Not Eligible
+	Duration: 2.228s, DNS @0.020s took 0.027s, TCP @0.048s took 0.226s, TLS 1.2 took 0.510s
+	bytes in/out: 5364/1983, packets in/out: 5/7, rtt: 0.223s, retransmitted bytes: 0, out-of-order bytes: 0
+	ecn packets sent/acked/marked/lost: 7/6/0/0
+2026-10-03 06:39:24.885 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C1] reporting state cancelled
+2026-10-03 06:39:24.885 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 1: done
+2026-10-03 06:39:24.885 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 6: cleaning up
+2026-10-03 06:39:24.885 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C6 6E6C287D-D5DB-4F69-BE11-BDEB58103C29 Hostname#60d1244e:443 quic-connection, url: https://user.mypikpak.com/v1/user/me, definite, attribution: developer] cancel
+2026-10-03 06:39:24.885 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C6 6E6C287D-D5DB-4F69-BE11-BDEB58103C29 Hostname#60d1244e:443 quic-connection, url: https://user.mypikpak.com/v1/user/me, definite, attribution: developer] cancelled
+	[C6.1.1.1 16198BAE-C8E0-4BD5-A991-7EABA5F6AFA8 192.168.64.8:50629<->IPv4#55ca003c:443]
+	Connected Path: satisfied (Path is satisfied), interface: en0
+	Privacy Stance: Not Eligible
+	Duration: 0.959s, DNS @0.016s took 0.012s, TCP @0.029s took 0.225s, TLS 1.2 took 0.475s
+	bytes in/out: 5083/1913, packets in/out: 4/6, rtt: 0.224s, retransmitted bytes: 0, out-of-order bytes: 0
+	ecn packets sent/acked/marked/lost: 6/5/0/0
+2026-10-03 06:39:24.885 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C6] reporting state cancelled
+2026-10-03 06:39:24.885 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 6: done
+2026-10-03 06:39:25.051 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client read_server_finished
+2026-10-03 06:39:25.051 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client finish_client_handshake
+2026-10-03 06:39:25.051 A  PikSeek[44052:1ba46] (Security) SecKeyCopyPublicBytes
+2026-10-03 06:39:25.051 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C9.1.1.1:2][0x120fd1e60] Client handshake state: TLS client done
+2026-10-03 06:39:25.051 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] boringssl_context_info_handler(2812) [C9.1.1.1:2][0x120fd1e60] Client handshake done
+2026-10-03 06:39:25.051 A  PikSeek[44052:1ba46] (Security) SecKeyCopyPublicBytes
+2026-10-03 06:39:25.051 Df PikSeek[44052:1ba46] [com.apple.network:boringssl] nw_protocol_boringssl_signal_connected(895) [C9.1.1.1:2][0x120fd1e60] TLS connected [server(0) version(0x0303) ciphersuite(TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) group(0x001d) signature_alg(0x0804) alpn(h2) resumed(0) offered_ticket(0) in_early_data(0) early_data_accepted(0) false_started(0) ocsp_received(0) sct_received(0) connect_time(454ms) flight_time(449ms) rtt(225ms) write_stalls(0) read_stalls(4) pake(0x0000)]
+2026-10-03 06:39:25.051 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_flow_connected [C9.1.1.1 IPv4#ff9c2411:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0)] Output protocol connected (CFNetworkConnection-2289428038)
+2026-10-03 06:39:25.051 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1.1.1 IPv4#ff9c2411:443 ready socket-flow (satisfied (Path is satisfied), interface: en0)] event: flow:child_finish_connect @0.922s
+2026-10-03 06:39:25.051 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1.1 Hostname#0d3eda01:443 ready resolver (satisfied (Path is satisfied), interface: en0)] event: flow:child_finish_connect @0.922s
+2026-10-03 06:39:25.051 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9.1 Hostname#0d3eda01:443 ready transform (satisfied (Path is satisfied), interface: en0)] event: flow:child_finish_connect @0.922s
+2026-10-03 06:39:25.051 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_flow_connected [C9 IPv4#ff9c2411:443 in_progress parent-flow (satisfied (Path is satisfied), interface: en0)] Output protocol connected (endpoint_flow)
+2026-10-03 06:39:25.051 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9 IPv4#ff9c2411:443 ready parent-flow (satisfied (Path is satisfied), interface: en0)] event: flow:finish_connect @0.922s
+2026-10-03 06:39:25.052 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C9] reporting state ready
+2026-10-03 06:39:25.052 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 9: connected successfully
+2026-10-03 06:39:25.052 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 9: TLS handshake complete
+2026-10-03 06:39:25.052 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 9: ready C(N) E(N)
+2026-10-03 06:39:25.052 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9] event: client:connection_reused @0.922s
+2026-10-03 06:39:25.052 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_protocol_socket_notify [C9.1.1.1:3] nw_protocol_notification_type_connection_idle is false
+2026-10-03 06:39:25.052 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <95D07AEB-4A62-479A-84FC-6CFAEDABD5C7>.<3> now using Connection 9
+2026-10-03 06:39:25.052 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <95D07AEB-4A62-479A-84FC-6CFAEDABD5C7>.<3> sent request, body N 0
+2026-10-03 06:39:25.279 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <95D07AEB-4A62-479A-84FC-6CFAEDABD5C7>.<3> received response, status 401 content K
+2026-10-03 06:39:25.279 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <95D07AEB-4A62-479A-84FC-6CFAEDABD5C7>.<3> done using Connection 9
+2026-10-03 06:39:25.279 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9] event: client:connection_idle @1.149s
+2026-10-03 06:39:25.279 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_protocol_socket_notify [C9.1.1.1:3] nw_protocol_notification_type_connection_idle is true
+2026-10-03 06:39:25.279 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Task <95D07AEB-4A62-479A-84FC-6CFAEDABD5C7>.<3> response ended
+2026-10-03 06:39:25.280 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Summary] Task <95D07AEB-4A62-479A-84FC-6CFAEDABD5C7>.<3> summary for task success {transaction_duration_ms=1159, response_status=401, connection=9, protocol="h2", domain_lookup_duration_ms=222, connect_duration_ms=682, secure_connection_duration_ms=454, private_relay=false, request_start_ms=931, request_duration_ms=0, response_start_ms=1158, response_duration_ms=1, request_bytes=111, request_throughput_kbps=9151, response_bytes=525, response_throughput_kbps=3538, cache_hit=false}
+2026-10-03 06:39:25.280 Df PikSeek[44052:1b908] [com.apple.CFNetwork:Default] Task <95D07AEB-4A62-479A-84FC-6CFAEDABD5C7>.<3> finished successfully
+2026-10-03 06:39:25.283 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 2: cleaning up
+2026-10-03 06:39:25.283 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C2 37BC8063-B409-4C02-90B1-123625FF4FC1 Hostname#cee03860:443 quic-connection, url: https://api-drive.mypikpak.net/drive/v1/about, definite, attribution: developer] cancel
+2026-10-03 06:39:25.283 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C2 37BC8063-B409-4C02-90B1-123625FF4FC1 Hostname#cee03860:443 quic-connection, url: https://api-drive.mypikpak.net/drive/v1/about, definite, attribution: developer] cancelled
+	[C2.1.1.1 AFB12908-88C3-4709-8BAC-BCFB400ABA4B 192.168.64.8:50622<->IPv4#5e7797c1:443]
+	Connected Path: satisfied (Path is satisfied), interface: en0
+	Privacy Stance: Not Eligible
+	Duration: 2.603s, DNS @0.002s took 0.260s, TCP @0.264s took 0.232s, TLS 1.2 took 0.461s
+	bytes in/out: 4205/1983, packets in/out: 5/7, rtt: 0.222s, retransmitted bytes: 0, out-of-order bytes: 0
+	ecn packets sent/acked/marked/lost: 7/6/0/0
+2026-10-03 06:39:25.289 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C2] reporting state cancelled
+2026-10-03 06:39:25.289 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 2: done
+2026-10-03 06:39:25.292 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 9: cleaning up
+2026-10-03 06:39:25.292 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9 82EB98B7-D9AB-408B-8270-F0754DBC1A5D Hostname#0d3eda01:443 quic-connection, url: https://user.mypikpak.net/v1/user/me, definite, attribution: developer] cancel
+2026-10-03 06:39:25.292 Df PikSeek[44052:1ba46] [com.apple.network:connection] [C9 82EB98B7-D9AB-408B-8270-F0754DBC1A5D Hostname#0d3eda01:443 quic-connection, url: https://user.mypikpak.net/v1/user/me, definite, attribution: developer] cancelled
+	[C9.1.1.1 04D97875-6B94-40BF-BA1F-30A8C218B446 192.168.64.8:50634<->IPv4#ff9c2411:443]
+	Connected Path: satisfied (Path is satisfied), interface: en0
+	Privacy Stance: Not Eligible
+	Duration: 1.163s, DNS @0.018s took 0.222s, TCP @0.240s took 0.226s, TLS 1.2 took 0.454s
+	bytes in/out: 3923/1913, packets in/out: 4/6, rtt: 0.223s, retransmitted bytes: 0, out-of-order bytes: 0
+	ecn packets sent/acked/marked/lost: 6/5/0/0
+2026-10-03 06:39:25.300 Df PikSeek[44052:1ba46] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C9] reporting state cancelled
+2026-10-03 06:39:25.300 Df PikSeek[44052:1ba46] [com.apple.CFNetwork:Default] Connection 9: done
+2026-10-03 06:39:25.900 A  PikSeek[44052:1ba46] (Metal) Metal Compiling Shader
+2026-10-03 06:39:25.930 A  PikSeek[44052:1b907] (Metal) Metal Compiling Shader
+2026-10-03 06:39:25.957 A  PikSeek[44052:1ba46] (Metal) Metal Compiling Shader
+2026-10-03 06:39:25.960 A  PikSeek[44052:1ba46] (Metal) Metal Compiling Shader
+2026-10-03 06:39:25.967 A  PikSeek[44052:1ba46] (Metal) Metal Compiling Shader
+2026-10-03 06:39:25.974 A  PikSeek[44052:1b907] (Metal) Metal Compiling Shader
+2026-10-03 06:39:25.999 A  PikSeek[44052:1ba46] (Metal) Metal Compiling Shader
+2026-10-03 06:39:26.001 A  PikSeek[44052:1b907] (Metal) Metal Compiling Shader

@@ -1,0 +1,4 @@
+UITEST ALIVE pid=44052
+total 0
+drwxr-xr-x   2 runner  staff   64 Oct  3 06:40 .
+drwxr-xr-x  17 runner  staff  544 Oct  3 06:40 ..
