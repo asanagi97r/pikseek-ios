@@ -56,7 +56,39 @@ class PreviewRuntime(
         engine = engine,
         listFolder = { services.driveRepository.listAllFiles(it).getOrThrow() },
         openSources = { fileId, durationMs -> openSources(fileId, null, durationMs) },
+        probeDurationMs = ::probeDurationMs,
     )
+
+    /**
+     * 网盘的文件列表里没给时长时（有些 m3u8 就这样）再找：先查文件详情（各画质版本各带着时长），
+     * 再不行打开原画让解码器读。毫秒；都拿不到为 0。
+     */
+    private suspend fun probeDurationMs(fileId: String): Long {
+        val detail = services.driveRepository.getFileDetail(fileId).getOrNull()
+        val fromDetail = detail?.let { d ->
+            d.params["duration"]?.toDoubleOrNull()?.takeIf { it > 0 }?.let { (it * 1000).toLong() }
+                ?: d.medias.mapNotNull { it.video?.duration?.takeIf { seconds -> seconds > 0 } }.maxOrNull()?.let { it * 1000 }
+        } ?: 0L
+        if (fromDetail > 0) {
+            PikoLog.i(TAG, "列表里没有时长，取自文件详情")
+            return fromDetail
+        }
+        return withContext(Dispatchers.IO) {
+            val grabber = newGrabber() ?: return@withContext 0L
+            try {
+                val streams = services.mediaRepository.openThumbnailStreams(fileId, 0).getOrNull() ?: return@withContext 0L
+                streams.use {
+                    val url = it.originalUrl ?: return@withContext 0L
+                    val opened = grabber.open(url)
+                    val duration = if (opened) grabber.durationMs else 0L
+                    PikoLog.i(TAG, "列表与详情里都没有时长，打开原画读：${if (duration > 0) "读到了" else "读不到（opened=$opened）"}")
+                    duration
+                }
+            } finally {
+                grabber.close()
+            }
+        }
+    }
 
     val environment = PikSeekEnvironment(
         settings = settings,

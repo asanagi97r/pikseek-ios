@@ -59,6 +59,8 @@ data class PreviewJobsState(
     val made: Int = 0,
     val skipped: Int = 0,
     val failed: Int = 0,
+    /** 没做成的原因与个数，例如「拿不到时长」→ 5。 */
+    val failures: Map<String, Int> = emptyMap(),
     /** 正在做的视频名与它做到了几成。 */
     val current: String? = null,
     val currentFraction: Float = 0f,
@@ -84,6 +86,8 @@ class PreviewCacheJobs(
     private val engine: ThumbnailEngine,
     private val listFolder: suspend (String) -> List<FileStat>,
     private val openSources: suspend (fileId: String, durationMs: Long) -> List<ThumbnailSource>,
+    /** 列表里没给时长时再去找（文件详情、打开视频读），毫秒；找不到为 0。 */
+    private val probeDurationMs: suspend (fileId: String) -> Long = { 0L },
 ) {
     private val _state = MutableStateFlow(PreviewJobsState())
     val state: StateFlow<PreviewJobsState> = _state.asStateFlow()
@@ -142,10 +146,10 @@ class PreviewCacheJobs(
         cloud.refresh(force = true)
         for (video in videos) {
             _state.update { it.copy(current = video.name, currentFraction = 0f) }
-            when (process(video, request)) {
-                Outcome.Made -> _state.update { it.copy(made = it.made + 1) }
-                Outcome.Skipped -> _state.update { it.copy(skipped = it.skipped + 1) }
-                Outcome.Failed -> _state.update { it.copy(failed = it.failed + 1) }
+            when (val outcome = process(video, request)) {
+                is Outcome.Made -> _state.update { it.copy(made = it.made + 1) }
+                is Outcome.Skipped -> _state.update { it.copy(skipped = it.skipped + 1) }
+                is Outcome.Failed -> _state.update { it.copy(failed = it.failed + 1, failures = it.failures + (outcome.reason to (it.failures[outcome.reason] ?: 0) + 1)) }
             }
         }
         _state.update {
@@ -155,7 +159,7 @@ class PreviewCacheJobs(
                 summary = buildString {
                     append("$label：做好 ${it.made} 个")
                     if (it.skipped > 0) append("，已有跳过 ${it.skipped} 个")
-                    if (it.failed > 0) append("，没做成 ${it.failed} 个")
+                    if (it.failed > 0) append("，没做成 ${it.failed} 个（" + it.failures.entries.joinToString("，") { (reason, count) -> "$reason $count" } + "）")
                     if (it.total == 0) append("（这里没有视频）")
                 },
             )
@@ -192,20 +196,39 @@ class PreviewCacheJobs(
         return found.values.toList()
     }
 
-    private enum class Outcome { Made, Skipped, Failed }
+    private sealed interface Outcome {
+        data object Made : Outcome
+
+        data object Skipped : Outcome
+
+        class Failed(val reason: String) : Outcome
+    }
 
     private suspend fun process(file: FileStat, request: PreviewCacheRequest): Outcome {
         val gcid = file.hash.uppercase()
-        if (gcid.isBlank()) return Outcome.Failed
-        // 网盘的媒体信息里的时长，秒。取整到秒，与看视频时的算法一致
-        val durationMs = ((file.params["duration"]?.toDoubleOrNull() ?: 0.0) * 1000).toLong() / 1000 * 1000
-        if (durationMs <= 0) {
-            PikoLog.w(TAG, "网盘没给时长，跳过一个视频")
-            return Outcome.Failed
-        }
+        if (gcid.isBlank()) return Outcome.Failed("网盘没给内容哈希")
         val density = request.density
+        // 先看要不要跳过：跳过的不必去找时长
         val existing = cloud.lookup(gcid)
         if (!request.overwrite && existing != null && existing.name.isComplete && existing.name.density == density) return Outcome.Skipped
+        // 网盘文件列表里的时长，秒。有些文件（比如部分 m3u8）列表里没有，再查详情、再打开视频读。取整到秒，与看视频时的算法一致
+        val listed = ((file.params["duration"]?.toDoubleOrNull() ?: 0.0) * 1000).toLong()
+        val probed = if (listed > 0) {
+            listed
+        } else {
+            try {
+                probeDurationMs(file.id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                0L
+            }
+        }
+        val durationMs = probed / 1000 * 1000
+        if (durationMs <= 0) {
+            PikoLog.w(TAG, "拿不到时长，跳过一个视频")
+            return Outcome.Failed("拿不到时长")
+        }
 
         val fingerprint = MediaFingerprint(file.id, gcid, file.sizeBytes, durationMs)
         val slots = ThumbnailPlan.of(durationMs, density).slotCount
@@ -237,17 +260,17 @@ class PreviewCacheJobs(
         }
         try {
             session.join()
-            if (session.progress.value.state == ThumbnailState.Unavailable) return Outcome.Failed
-            val stored = withContext(Dispatchers.IO) { cache.stored(fingerprint) } ?: return Outcome.Failed
-            if (stored.frameCount == 0) return Outcome.Failed
-            val pack = withContext(Dispatchers.IO) { cache.exportPack(fingerprint) } ?: return Outcome.Failed
+            if (session.progress.value.state == ThumbnailState.Unavailable) return Outcome.Failed("取不出画面")
+            val stored = withContext(Dispatchers.IO) { cache.stored(fingerprint) } ?: return Outcome.Failed("取不出画面")
+            if (stored.frameCount == 0) return Outcome.Failed("取不出画面")
+            val pack = withContext(Dispatchers.IO) { cache.exportPack(fingerprint) } ?: return Outcome.Failed("打包失败")
             cloud.upload(PreviewPackName(gcid, density, stored.frameCount, stored.slotCount), pack)
             return Outcome.Made
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             PikoLog.w(TAG, "一个视频的预览缓存没做成：${e::class.simpleName}")
-            return Outcome.Failed
+            return Outcome.Failed("上传或网络出错")
         } finally {
             watcher.cancel()
             session.close()

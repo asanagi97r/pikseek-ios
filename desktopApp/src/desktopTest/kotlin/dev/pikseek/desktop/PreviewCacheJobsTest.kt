@@ -58,6 +58,10 @@ class PreviewCacheJobsTest {
         ),
         "sub" to listOf(video("c", "c.mp4", gcidC)),
         "cache" to listOf(video("never", "不该被扫到.mp4", "E".repeat(40))),
+        "hls" to listOf(
+            FileStat(kind = "drive#file", id = "m3u8-ok", name = "ok.m3u8", mimeType = "video/mpegurl", size = "1000", hash = "D".repeat(40)),
+            FileStat(kind = "drive#file", id = "m3u8-none", name = "none.m3u8", mimeType = "video/mpegurl", size = "1000", hash = "F".repeat(40)),
+        ),
     )
 
     private val jobs = PreviewCacheJobs(
@@ -67,6 +71,8 @@ class PreviewCacheJobsTest {
         engine = ThumbnailEngine(cache),
         listFolder = { folders.getValue(it) },
         openSources = { _, durationMs -> listOf(FakeSource(durationMs)) },
+        // 列表里没时长的：一个查得到（文件详情里有），一个查不到
+        probeDurationMs = { id -> if (id == "m3u8-ok") 600_000L else 0L },
     )
 
     @AfterTest
@@ -84,6 +90,15 @@ class PreviewCacheJobsTest {
         // 10 分钟的片子中档 60 格，做满
         store.packs.value.values.forEach { assertEquals(PreviewPackName(it.name.gcid, PreviewDensity.Medium, 60, 60), it.name) }
         assertTrue(jobs.live.value.isEmpty(), "做完的视频从「正在做」里拿掉")
+    }
+
+    @Test
+    fun missingListedDurationIsLookedUpAndUnfindableOnesSayWhy(): Unit = runBlocking {
+        val state = run(PreviewCacheRequest(PreviewCacheTarget.Folder("hls", "hls"), PreviewDensity.Medium, includeSubfolders = false, overwrite = false))
+        assertEquals(1, state.made, "列表里没时长、详情里查得到的照做")
+        assertEquals(setOf("D".repeat(40)), store.packs.value.keys)
+        assertEquals(mapOf("拿不到时长" to 1), state.failures)
+        assertTrue(state.summary!!.contains("拿不到时长 1"), state.summary)
     }
 
     @Test
