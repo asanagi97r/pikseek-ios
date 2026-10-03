@@ -30,6 +30,9 @@ import dev.pikseek.ui.PreviewRuntime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import dev.pikseek.auth.PikPakAuthClient
+import dev.pikseek.auth.defaultAuthTransport
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -59,9 +62,22 @@ object PikSeekIos {
     private var runtime: Runtime? = null
 
     /** 只调一次，在取界面之前。 */
-    fun start(native: NativeServices) {
+    fun start(native: NativeServices) = boot(native, uiTest = false)
+
+    /**
+     * 打包流程在模拟器里用的「已登录」启动：认证请求由一个假的服务端答复，拿到一个假令牌，然后照常进主界面。
+     * 网盘接口拿着假令牌会被 PikPak 拒绝，界面走出错的路子；要看的是登录之后这一段在 iOS 上会不会崩。
+     * 只由环境变量 PIKSEEK_UITEST 触发，手机上正常点开走不到这里。
+     */
+    fun startUiTest(native: NativeServices) = boot(native, uiTest = true)
+
+    /** Swift 一侧接住的 Objective-C 异常，写进闪退记录。 */
+    fun recordNativeCrash(kind: String, details: String) = CrashReport.writeNative(kind, details)
+
+    private fun boot(native: NativeServices, uiTest: Boolean) {
         if (runtime != null) return
         installLog(native)
+        CrashReport.install(native.appVersion())
         IosPaths.cleanTempDirectory()
 
         // 认证模块要的两样系统能力，先于 AuthBroker 交进去
@@ -78,6 +94,7 @@ object PikSeekIos {
         val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         val authBroker = AuthBroker(
             store = KeychainCredentialStore(KeychainAdapter(native.keychain())),
+            transport = if (uiTest) uiTestTransport else defaultAuthTransport(),
             // 刷新会话跟着设置里选的官方根域名走；密码登录固定走 mypikpak.com
             refreshRoot = { runBlocking { preferences.pikpakDomainFlow.first() } },
         )
@@ -113,6 +130,24 @@ object PikSeekIos {
         )
         val appearance = preferences.appearanceFlow(platform.supportsDynamicColor)
         runtime = Runtime(native, services, platform, preview, appearance, runBlocking { appearance.first() })
+        if (uiTest) {
+            appScope.launch {
+                delay(3_000)
+                PikoLog.i("UiTest", "用假令牌登录")
+                clientManager.loginWithToken("uitest@example.invalid", "uitest-refresh".toCharArray())
+                    .onSuccess { PikoLog.i("UiTest", "已登录，进主界面") }
+                    .onFailure { PikoLog.w("UiTest", "假登录失败", it) }
+            }
+        }
+    }
+
+    private val uiTestTransport = PikPakAuthClient.Transport { uri, _, _ ->
+        val body = if (uri.path.endsWith("captcha/init")) {
+            """{"captcha_token":"uitest"}"""
+        } else {
+            """{"access_token":"uitest-not-a-real-token","refresh_token":"uitest-refresh","expires_in":7200,"sub":"uitest"}"""
+        }
+        PikPakAuthClient.Reply(200, body)
     }
 
     /** 整个界面。交给窗口当根视图控制器。 */
@@ -132,6 +167,7 @@ object PikSeekIos {
                     appearance = appearance,
                     videoPlayer = videoPlayer,
                 )
+                CrashNotice(current.native)
             }
         }
     }

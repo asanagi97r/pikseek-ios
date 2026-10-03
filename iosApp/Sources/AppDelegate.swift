@@ -14,8 +14,18 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // 看视频时静音拨片不该把声音关掉
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
 
-        // 界面与全部逻辑在 Kotlin 一侧（PikSeekKit）；这里只把系统能力交进去
-        PikSeekIos.shared.start(native: services)
+        // 界面与全部逻辑在 Kotlin 一侧（PikSeekKit）；这里只把系统能力交进去。
+        // 打包流程在模拟器里带着 PIKSEEK_UITEST 启动：假的认证服务端给一个假令牌，看登录之后的界面会不会崩
+        if ProcessInfo.processInfo.environment["PIKSEEK_UITEST"] != nil {
+            PikSeekIos.shared.startUiTest(native: services)
+        } else {
+            PikSeekIos.shared.start(native: services)
+        }
+        // Objective-C 一侧没接住的异常（系统框架里抛的）也写进闪退记录
+        NSSetUncaughtExceptionHandler { exception in
+            let details = "\(exception.name.rawValue): \(exception.reason ?? "")\n" + exception.callStackSymbols.joined(separator: "\n")
+            PikSeekIos.shared.recordNativeCrash(kind: "Objective-C 异常", details: details)
+        }
 
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = selfTestController() ?? PikSeekIos.shared.mainViewController()

@@ -132,7 +132,23 @@ jobs:
           xcrun simctl io "$UDID" screenshot out/selftest.png
           cp "$DATA/Documents/selftest.txt" out/selftest.txt 2>/dev/null || echo "no selftest.txt" > out/selftest.txt
           xcrun simctl terminate "$UDID" dev.pikseek.ios || true
-          xcrun simctl spawn "$UDID" log show --last 3m --predicate 'process == "PikSeek"' --style compact 2>/dev/null | tail -200 > out/simulator-log.txt || true
+          # 登录之后的界面：假的认证服务端给一个假令牌，照常进主界面（网盘接口会拒绝假令牌，界面走出错的路子），
+          # 停 40 秒，看程序还在不在。崩了的话 Kotlin 的闪退记录与系统的崩溃报告都取回来
+          SIMCTL_CHILD_PIKSEEK_UITEST=1 xcrun simctl launch "$UDID" dev.pikseek.ios
+          for i in 1 2 3 4; do
+            sleep 10
+            xcrun simctl io "$UDID" screenshot "out/uitest-$i.png" || true
+          done
+          PID=$(xcrun simctl spawn "$UDID" launchctl list | grep dev.pikseek.ios | awk '{print $1}' | head -1)
+          if echo "$PID" | grep -qE '^[0-9]+$'; then echo "UITEST ALIVE pid=$PID" > out/uitest.txt; else echo "UITEST GONE (crashed or exited) pid=$PID" > out/uitest.txt; fi
+          mkdir -p out/uitest-logs out/crash
+          cp "$DATA"/Library/Application\ Support/PikSeek/logs/*.log out/uitest-logs/ 2>/dev/null || true
+          cp "$DATA"/Documents/闪退记录/*.txt out/crash/ 2>/dev/null || true
+          cp ~/Library/Logs/DiagnosticReports/PikSeek* out/crash/ 2>/dev/null || true
+          ls -la out/crash >> out/uitest.txt
+          cat out/uitest.txt
+          xcrun simctl terminate "$UDID" dev.pikseek.ios || true
+          xcrun simctl spawn "$UDID" log show --last 5m --predicate 'process == "PikSeek"' --style compact 2>/dev/null | tail -400 > out/simulator-log.txt || true
 
       - name: Build for device (unsigned)
         run: |
