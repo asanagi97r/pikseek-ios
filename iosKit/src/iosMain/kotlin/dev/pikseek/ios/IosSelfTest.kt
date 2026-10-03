@@ -18,7 +18,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.piko.shared.data.ChildFile
 import dev.piko.shared.media.player.PlaybackBackendEvent
+import dev.piko.shared.naming.parseMediaName
+import dev.piko.shared.state.describeDriveFolder
 import dev.piko.shared.media.player.PlaybackTarget
 import dev.pikseek.auth.AuthBroker
 import dev.pikseek.auth.AuthNetworkPolicy
@@ -100,6 +103,18 @@ internal fun IosSelfTestScreen(native: NativeServices, sample: String, otherSamp
             }
             check(blocked && allowed && transportRefuses) { "blocked=$blocked allowed=$allowed transportRefuses=$transportRefuses" }
             "blocksForeign=$blocked allowsOfficial=$allowed transportRefuses=$transportRefuses"
+        }
+
+        // 网盘列表的文件名解析：正则多，iOS 的正则引擎与 Java 的不完全一样，有一个不认整个文件就初始化失败。
+        // 1.0.0 第 10 版就是这样一登录就崩（频道推广的正则用了 \p{script=Han}）
+        step("file names") {
+            val samples = listOf(
+                "www.98T.la@ABC-123-C", "[thz.la]SSIS-001 片名 [FHD]", "TG频道@channel丨FC2-PPV-1234567",
+                "一本道 010124_001", "Sword.Art.Online - 01 [1080p].mkv", "BlackedRaw.19.05.17.Name.XXX.1080p.mp4",
+            )
+            val parsed = samples.map { parseMediaName(it).title }
+            val folders = samples.map { describeDriveFolder(it, listOf(ChildFile("$it.mp4"))).title }
+            "parsed=${parsed.count { it != null }}/${samples.size} folders=${folders.count { it != null }}/${samples.size}"
         }
 
         step("security facts") {

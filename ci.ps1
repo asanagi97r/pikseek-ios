@@ -26,6 +26,7 @@ $deadline = (Get-Date).AddMinutes($TimeoutMinutes)
 $done = $false
 $runners = @('macos-latest', 'macos-15-intel')
 $winner = ''
+$fallback = ''
 while ((Get-Date) -lt $deadline) {
     Start-Sleep -Seconds 30
     # Each runner force-pushes its results to its own branch, with the commit it ran for in the message.
@@ -33,21 +34,25 @@ while ((Get-Date) -lt $deadline) {
         Git-Run fetch -q -f origin "+refs/heads/ci-results-${runner}:refs/remotes/origin/ci-results-${runner}" 2>$null
         if ($LASTEXITCODE -ne 0) { continue }
         $message = (Git-Run log -1 --format=%s "origin/ci-results-$runner")
-        # Prefer the Apple-silicon runner (it also runs the simulator self-test); take the Intel one only if it succeeded
+        # Wait for the Apple-silicon runner (it also runs the simulator tests). The Intel one only builds;
+        # its result is kept as a fallback in case the Apple-silicon runner never gets a machine
         if ($message -match $sha) {
+            if ($runner -eq 'macos-latest') { $done = $true; $winner = $runner; break }
             $status = (Git-Run show "origin/ci-results-${runner}:RESULT.txt")
-            if ($runner -eq 'macos-latest' -or $status -match 'status=success') { $done = $true; $winner = $runner; break }
+            if ($status -match 'status=success') { $fallback = $runner }
         }
     }
     if ($done) { break }
 }
+if (-not $done -and $fallback) { Write-Output ('Apple-silicon runner did not report; using ' + $fallback); $done = $true; $winner = $fallback }
 if (-not $done) { Write-Output 'timed out waiting for results'; exit 3 }
 
 if (Test-Path $results) { [IO.Directory]::Delete($results, $true) }
 New-Item -ItemType Directory -Force $results | Out-Null
 $archive = Join-Path $results '_results.tar'
 Git-Run archive --format=tar -o $archive "origin/ci-results-$winner"
-tar -xf $archive -C $results
+# Windows' own tar: a Git-for-Windows tar earlier on PATH reads "C:" as a remote host
+& (Join-Path $env:SystemRoot 'System32\tar.exe') -xf $archive -C $results
 [IO.File]::Delete($archive)
 Get-Content (Join-Path $results 'RESULT.txt')
 Get-ChildItem $results | ForEach-Object { Write-Output ('  ' + $_.Name + '  ' + $_.Length) }

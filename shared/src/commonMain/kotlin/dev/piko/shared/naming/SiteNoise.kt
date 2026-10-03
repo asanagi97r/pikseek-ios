@@ -24,9 +24,10 @@ private val BRACKETED = Regex("""[\[【(]\s*(${host(ANY_TLD)})\s*[\]】)]""", Re
 
 // 频道推广：「更多视频请在Telegram收藏夹发送@xxx丨」「TG频道@xxx」。前面的招揽语只收汉字与字母，
 // 不收数字与空格，「129507 TG频道@xxx」前面的编号留下。
-// 汉字写作 \p{script=Han}，不写 \p{IsHan}：Android 的正则是 ICU，8.x 的 ICU 不认 Java 专有的 Is 前缀，
-// 编译即抛异常，这个顶层 val 所在的类初始化失败，一解析文件名应用就崩
-private val CHANNEL_AD = Regex("""[\p{script=Han}A-Za-z]{0,12}(?:Telegram|TG|电报)[^@\s丨|]{0,12}@[A-Za-z0-9_]+[丨|\s_-]*""", RegexOption.IGNORE_CASE)
+// 汉字直接写码位区间（扩展 A、基本区、兼容区），不写 \p{IsHan} 也不写 \p{script=Han}：Android 的 ICU 不认 Is 前缀，
+// iOS 上 Kotlin/Native 的正则不认 script=。哪种写错都是编译即抛异常，这个顶层 val 所在的文件初始化失败，
+// 一解析文件名应用就崩（iOS 1.0.0 第 10 版登录后闪退即此）
+private val CHANNEL_AD = Regex("""[㐀-䶿一-鿿豈-﫿A-Za-z]{0,12}(?:Telegram|TG|电报)[^@\s丨|]{0,12}@[A-Za-z0-9_]+[丨|\s_-]*""", RegexOption.IGNORE_CASE)
 
 // 论坛与分享站：短域名后缀，或名字里带数字（98t.la、2048.cc、hhd800.com）。出品方多是完整单词加 .com
 private val FORUM_LIKE = Regex("""(?i)\.(?:la|cc|vip|xyz|top|club|cn)$|[0-9]""")

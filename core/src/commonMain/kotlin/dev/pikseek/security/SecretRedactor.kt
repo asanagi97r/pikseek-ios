@@ -17,7 +17,8 @@ object SecretRedactor {
     private const val SECRET_KEYS =
         "access_token|refresh_token|id_token|captcha_token|captcha_sign|password|passwd|pwd|client_secret|" +
             "authorization|cookie|set-cookie|x-captcha-token|token|signature|sign|secret"
-    private val JSON_PAIR = Regex("""(?i)("(?:$SECRET_KEYS)"\s*:\s*)"(?:[^"\\]|\\.)*"""")
+    // 字符类写 [^\\"] 而不是 [^"\\]：Kotlin/Native（iOS）的正则把紧挨着 ] 的 \\ 当成没闭合，编译即抛异常
+    private val JSON_PAIR = Regex("""(?i)("(?:$SECRET_KEYS)"\s*:\s*)"(?:[^\\"]|\\.)*"""")
     // 值至少六个字符才算：报告里「token: 无」这类说明不该被当成机密抹掉
     private val PLAIN_PAIR = Regex("""(?i)\b($SECRET_KEYS)(\s*[=:]\s*)(?!\[已隐去])[^\s&;,"'}\]]{6,}""")
     private val URL_QUERY = Regex("""(https?://[^\s"'<>?#]+)\?[^\s"'<>]*""")
