@@ -1,0 +1,9 @@
+PASS keychain store: persisted=true restored=true itemsAfterLogout=1
+PASS auth allowlist: blocksForeign=true allowsOfficial=true transportRefuses=true
+PASS file names: parsed=6/6 folders=6/6
+PASS security facts: telemetry=[] plaintextFiles=0 scanned=1
+PASS play mp4: position=800 duration=4000 aspect=1.2222222 vo=gpu-next hwdec=no audioTracks=1
+PASS play wmv: position=846 duration=4046 aspect=1.2222222 vo=gpu-next hwdec=no audioTracks=1
+PASS timeline preview: frames=8/8 frame=240x196 cacheBytes=40960 reloadedFromCache=8 source=本机缓存
+PASS preview pack: packBytes=41008 frames=8/8 openedFromPack=8 name=BCDEF01_M_8of8.pspreview
+ALL PASS

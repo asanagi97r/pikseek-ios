@@ -1,0 +1,63 @@
+1072:/Users/runner/work/pikseek-ios/pikseek-ios/iosApp/PikSeek.xcodeproj: PikSeek: ld: warning: object file (/Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeekKit.framework/PikSeekKit[1605](libicu.icudtl_dat.o)) was built for newer 'iOS-simulator' version (18.5) than being linked (15.0)
+1133:** BUILD SUCCEEDED **
+----- tail -----
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    construct-stub-executor-link-file-list /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app/PikSeek.debug.dylib /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platfor
+note: Using stub executor library with Swift entry point. (in target 'PikSeek' from project 'PikSeek')
+
+Ld /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app/PikSeek normal (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios15.0-simulator -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator -F/Use
+
+ExtractAppIntentsMetadata (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.KnHK48/Metal.xctoolchain --module-name PikSeek --sdk-root /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulato
+2026-10-09 04:38:52.831 appintentsmetadataprocessor[37805:95143] Starting appintentsmetadataprocessor export
+2026-10-09 04:38:52.846 appintentsmetadataprocessor[37805:95143] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+CopySwiftLibs /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app/PikSeek.debug.dylib --scan-folder /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app/Frameworks --scan-folder /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Bui
+
+AppIntentsSSUTraining (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app/Info.plist --temp-dir-path /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Debug-iphonesimulator/PikSe
+2026-10-09 04:38:52.939 appintentsnltrainingprocessor[37806:95145] Parsing options for appintentsnltrainingprocessor
+2026-10-09 04:38:52.942 appintentsnltrainingprocessor[37806:95145] Starting AppIntents SSU YAML Generation
+2026-10-09 04:38:52.948 appintentsnltrainingprocessor[37806:95145] No AppShortcuts found - Skipping.
+
+CodeSign /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app/PikSeek.debug.dylib (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app/PikSeek.debug.dylib
+
+CodeSign /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app/__preview.dylib (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app/__preview.dylib
+
+CodeSign /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app
+
+RegisterExecutionPolicyException /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    builtin-RegisterExecutionPolicyException /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app
+
+Validate /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    builtin-validationUtility /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    /usr/bin/touch -c /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Debug-iphonesimulator/PikSeek.app
+
+** BUILD SUCCEEDED **
+
