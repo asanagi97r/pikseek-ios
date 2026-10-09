@@ -376,7 +376,7 @@ class PreviewCacheJobs(
                 }
                 if (needed.isEmpty()) continue
                 // 要认的那几集，加上它们前后各几集（拿来比）
-                val wanted = needed.flatMap { (it - NEIGHBOURS)..(it + NEIGHBOURS) }.filter { it in episodes.indices }.toSortedSet().toList()
+                val wanted = needed.flatMap { (it - NEIGHBOURS)..(it + NEIGHBOURS) }.filter { it in episodes.indices }.distinct().sorted()
                 val prints = episodes.mapIndexed { index, file ->
                     val gcid = file.hash.uppercase()
                     if (index !in wanted) return@mapIndexed EpisodeMatcher.Episode(gcid, null, null)
