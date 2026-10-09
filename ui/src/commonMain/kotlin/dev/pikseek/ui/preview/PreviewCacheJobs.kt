@@ -1,11 +1,16 @@
 package dev.pikseek.ui.preview
 
+import dev.piko.data.repository.NaturalOrder
 import dev.piko.data.repository.isPlayableVideo
 import dev.piko.shared.data.isVaulted
 import dev.piko.shared.log.PikoLog
+import dev.pikseek.thumbnail.EpisodeMatcher
+import dev.pikseek.thumbnail.EpisodeSound
 import dev.pikseek.thumbnail.MediaFingerprint
+import dev.pikseek.thumbnail.MediaMarks
 import dev.pikseek.thumbnail.PreviewDensity
 import dev.pikseek.thumbnail.PreviewPackName
+import dev.pikseek.thumbnail.SceneAnalysis
 import dev.pikseek.thumbnail.ThumbnailCache
 import dev.pikseek.thumbnail.ThumbnailEngine
 import dev.pikseek.thumbnail.ThumbnailPlan
@@ -40,12 +45,16 @@ sealed interface PreviewCacheTarget {
  *
  * @param includeSubfolders 文件夹连同它的子文件夹（一层层往下）
  * @param overwrite 已有的也重做。为 false 时只做没有的、没做完的、档次与这次不同的
+ * @param scenes 顺带做场景分点（见 [SceneAnalysis]）。手动改过的不动
+ * @param episodes 顺带认片头片尾：同一个文件夹里的几集互相比声音（见 [EpisodeMatcher]）。手动定过的不动
  */
 class PreviewCacheRequest(
     val target: PreviewCacheTarget,
     val density: PreviewDensity,
     val includeSubfolders: Boolean,
     val overwrite: Boolean,
+    val scenes: Boolean = false,
+    val episodes: Boolean = false,
 )
 
 /** 预览缓存的任务眼下做到哪了。 */
@@ -61,6 +70,11 @@ data class PreviewJobsState(
     val failed: Int = 0,
     /** 没做成的原因与个数，例如「拿不到时长」→ 5。 */
     val failures: Map<String, Int> = emptyMap(),
+    /** 做了场景分点的视频数。 */
+    val marked: Int = 0,
+    /** 认出片头或片尾的集数，与认过的集数。 */
+    val episodesFound: Int = 0,
+    val episodesChecked: Int = 0,
     /** 正在做的视频名与它做到了几成。 */
     val current: String? = null,
     val currentFraction: Float = 0f,
@@ -88,6 +102,8 @@ class PreviewCacheJobs(
     private val openSources: suspend (fileId: String, durationMs: Long) -> List<ThumbnailSource>,
     /** 列表里没给时长时再去找（文件详情、打开视频读），毫秒；找不到为 0。 */
     private val probeDurationMs: suspend (fileId: String) -> Long = { 0L },
+    /** 取一集开头、结尾的声音指纹，认片头片尾用。这个平台解不了声音时为 null，那就不认。 */
+    private val episodeAudio: (suspend (fileId: String, durationMs: Long) -> EpisodeMatcher.Episode?)? = null,
 ) {
     private val _state = MutableStateFlow(PreviewJobsState())
     val state: StateFlow<PreviewJobsState> = _state.asStateFlow()
@@ -146,12 +162,16 @@ class PreviewCacheJobs(
         cloud.refresh(force = true)
         for (video in videos) {
             _state.update { it.copy(current = video.name, currentFraction = 0f) }
-            when (val outcome = process(video, request)) {
+            val outcome = process(video, request)
+            when (outcome) {
                 is Outcome.Made -> _state.update { it.copy(made = it.made + 1) }
                 is Outcome.Skipped -> _state.update { it.copy(skipped = it.skipped + 1) }
                 is Outcome.Failed -> _state.update { it.copy(failed = it.failed + 1, failures = it.failures + (outcome.reason to (it.failures[outcome.reason] ?: 0) + 1)) }
             }
+            // 预览这次没做成也照做：网盘上已有做好的预览包时，分点用它
+            if (request.scenes && markScenes(video, request)) _state.update { it.copy(marked = it.marked + 1) }
         }
+        if (request.episodes && episodeAudio != null) findEpisodes(videos, request)
         _state.update {
             it.copy(
                 running = false,
@@ -160,6 +180,8 @@ class PreviewCacheJobs(
                     append("$label：做好 ${it.made} 个")
                     if (it.skipped > 0) append("，已有跳过 ${it.skipped} 个")
                     if (it.failed > 0) append("，没做成 ${it.failed} 个（" + it.failures.entries.joinToString("，") { (reason, count) -> "$reason $count" } + "）")
+                    if (it.marked > 0) append("；场景分点 ${it.marked} 个")
+                    if (it.episodesChecked > 0) append("；片头片尾认出 ${it.episodesFound}/${it.episodesChecked} 集")
                     if (it.total == 0) append("（这里没有视频）")
                 },
             )
@@ -260,9 +282,15 @@ class PreviewCacheJobs(
         }
         try {
             session.join()
-            if (session.progress.value.state == ThumbnailState.Unavailable) return Outcome.Failed("取不出画面")
-            val stored = withContext(Dispatchers.IO) { cache.stored(fingerprint) } ?: return Outcome.Failed("取不出画面")
-            if (stored.frameCount == 0) return Outcome.Failed("取不出画面")
+            // 说清为什么取不出：没有转码流的只能读原画，网盘响应慢时原画常常一帧都读不下来
+            val noFrames = when (session.progress.value.source) {
+                "" -> "取不出画面（没有可用的画面来源）"
+                "原画" -> "取不出画面（没有转码流，原画读不下来）"
+                else -> "取不出画面"
+            }
+            if (session.progress.value.state == ThumbnailState.Unavailable) return Outcome.Failed(noFrames)
+            val stored = withContext(Dispatchers.IO) { cache.stored(fingerprint) } ?: return Outcome.Failed(noFrames)
+            if (stored.frameCount == 0) return Outcome.Failed(noFrames)
             val pack = withContext(Dispatchers.IO) { cache.exportPack(fingerprint) } ?: return Outcome.Failed("打包失败")
             cloud.upload(PreviewPackName(gcid, density, stored.frameCount, stored.slotCount), pack)
             return Outcome.Made
@@ -278,8 +306,133 @@ class PreviewCacheJobs(
         }
     }
 
+    /**
+     * 给一个视频做场景分点：用本机的预览帧粗分（本机没有就先取回网盘上的包），再从画面来源取几十帧细化，存到网盘。
+     * 手动改过的不动；做过的只在「已有的也重做」时重做。做了返回 true。
+     */
+    private suspend fun markScenes(file: FileStat, request: PreviewCacheRequest): Boolean {
+        val gcid = file.hash.uppercase()
+        if (gcid.isBlank()) return false
+        return try {
+            val existing = cloud.loadMarks(gcid)
+            if (existing?.scenesEdited == true || (existing?.scenesDone == true && !request.overwrite)) return false
+            // 有 gcid 时缓存只按 gcid 与大小认，时长先填 0，读到索引再换上
+            var fingerprint = MediaFingerprint(file.id, gcid, file.sizeBytes, 0)
+            var stored = withContext(Dispatchers.IO) { cache.stored(fingerprint) }
+            if (stored == null) {
+                val pack = cloud.lookup(gcid) ?: return false
+                val bytes = cloud.download(pack)
+                stored = withContext(Dispatchers.IO) { cache.importPack(fingerprint, bytes) } ?: return false
+            }
+            fingerprint = fingerprint.copy(durationMs = stored.durationMs)
+            val frames = withContext(Dispatchers.IO) { cache.load(fingerprint, stored.plan) }?.values?.toList().orEmpty()
+            if (frames.size < MIN_SCENE_FRAMES) return false
+            _state.update { it.copy(current = "场景分点：${file.name}", currentFraction = 0f) }
+            val sources = openSources(file.id, stored.durationMs)
+            try {
+                val source = sources.firstOrNull()
+                val scenes = SceneAnalysis.analyze(
+                    frames = frames,
+                    durationMs = stored.durationMs,
+                    fetch = source?.let { s -> { time -> s.frameNear(time) } },
+                    onProgress = { done, total -> _state.update { it.copy(currentFraction = if (total == 0) 1f else done.toFloat() / total) } },
+                )
+                val base = existing ?: MediaMarks(gcid = gcid, durationMs = stored.durationMs)
+                cloud.saveMarks(base.copy(scenes = scenes, scenesDone = true))
+                PikoLog.i(TAG, "场景分点 ${scenes.size} 个")
+                true
+            } finally {
+                sources.forEach { runCatching { it.close() } }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            PikoLog.w(TAG, "一个视频的场景分点没做成：${e::class.simpleName}")
+            false
+        }
+    }
+
+    /**
+     * 认片头片尾：按所在文件夹分组，每组两集以上才认（单独一集没得比）。组里按集数排好，每集取开头、结尾的声音，
+     * 与前后几集比。手动定过的不动；认过的（认没认出都算）只在「已有的也重做」时重认。太长的（电影、长片）不认。
+     */
+    private suspend fun findEpisodes(videos: List<FileStat>, request: PreviewCacheRequest) {
+        val audio = episodeAudio ?: return
+        val groups = videos
+            .filter { it.hash.isNotBlank() }
+            .groupBy { it.parentId }
+            .values
+            .map { group -> group.sortedWith(compareBy(NaturalOrder) { it.name }) }
+            .filter { it.size >= 2 }
+        for (group in groups) {
+            try {
+                val durations = group.associate { it.hash.uppercase() to durationOf(it) }
+                val episodes = group.filter { (durations[it.hash.uppercase()] ?: 0L) in 1..EpisodeSound.MAX_EPISODE_MS }
+                if (episodes.size < 2) continue
+                val marks = episodes.associate { it.hash.uppercase() to cloud.loadMarks(it.hash.uppercase()) }
+                val needed = episodes.indices.filter { index ->
+                    val existing = marks[episodes[index].hash.uppercase()]
+                    existing?.episodeEdited != true && (request.overwrite || existing?.episodeDone != true)
+                }
+                if (needed.isEmpty()) continue
+                // 要认的那几集，加上它们前后各几集（拿来比）
+                val wanted = needed.flatMap { (it - NEIGHBOURS)..(it + NEIGHBOURS) }.filter { it in episodes.indices }.toSortedSet().toList()
+                val prints = episodes.mapIndexed { index, file ->
+                    val gcid = file.hash.uppercase()
+                    if (index !in wanted) return@mapIndexed EpisodeMatcher.Episode(gcid, null, null)
+                    _state.update { it.copy(current = "认片头片尾：${file.name}", currentFraction = wanted.indexOf(index).toFloat() / wanted.size) }
+                    val got = try {
+                        audio(file.id, durations.getValue(gcid))
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        PikoLog.w(TAG, "取一集的声音失败：${e::class.simpleName}")
+                        null
+                    }
+                    EpisodeMatcher.Episode(gcid, got?.head, got?.tail)
+                }
+                val found = withContext(Dispatchers.Default) { EpisodeMatcher.find(prints, NEIGHBOURS) }
+                for (index in needed) {
+                    // 这一集的声音一点都没取到：不算认过，下次再认
+                    if (prints[index].head == null && prints[index].tail == null) continue
+                    val gcid = episodes[index].hash.uppercase()
+                    val result = found[gcid] ?: continue
+                    val base = marks[gcid] ?: MediaMarks(gcid = gcid, durationMs = durations.getValue(gcid))
+                    cloud.saveMarks(base.copy(intro = result.intro, outro = result.outro, episodeDone = true))
+                    val hit = result.intro != null || result.outro != null
+                    _state.update { it.copy(episodesChecked = it.episodesChecked + 1, episodesFound = it.episodesFound + if (hit) 1 else 0) }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                PikoLog.w(TAG, "一组剧集的片头片尾没认成：${e::class.simpleName}")
+            }
+        }
+    }
+
+    /** 一个视频的时长：列表里的，没有就看本机预览的索引，再没有就去查。毫秒，查不到为 0。 */
+    private suspend fun durationOf(file: FileStat): Long {
+        val listed = ((file.params["duration"]?.toDoubleOrNull() ?: 0.0) * 1000).toLong()
+        if (listed > 0) return listed / 1000 * 1000
+        val stored = withContext(Dispatchers.IO) { cache.stored(MediaFingerprint(file.id, file.hash.uppercase(), file.sizeBytes, 0)) }
+        if (stored != null) return stored.durationMs
+        return try {
+            probeDurationMs(file.id) / 1000 * 1000
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            0L
+        }
+    }
+
     private companion object {
         const val TAG = "PreviewJobs"
+
+        // 预览帧少于这么多不做场景分点：太稀了分不准
+        const val MIN_SCENE_FRAMES = 8
+
+        // 认片头片尾时每集与前后各几集比
+        const val NEIGHBOURS = 2
         val IDLE = MutableStateFlow(false)
         val TWO = MutableStateFlow(2)
     }

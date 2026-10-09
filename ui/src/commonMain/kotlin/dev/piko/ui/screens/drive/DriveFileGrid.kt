@@ -644,8 +644,13 @@ internal fun DriveListHeader(
     onViewModeChange: (DriveViewMode) -> Unit,
     /** 为 false 时只留搜索结果的说明：宽窗口里这些控件在命令栏上。 */
     showControls: Boolean = true,
+    /** PikSeek：收藏、讨厌的筛选，单独一行，宽窗口里也在（它筛的是这个文件夹的内容）；为 null 时不摆。 */
+    ratingFilter: (@Composable () -> Unit)? = null,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
+        if (ratingFilter != null) {
+            Box(Modifier.padding(start = 12.dp, top = 8.dp, bottom = if (showControls) 0.dp else 8.dp)) { ratingFilter() }
+        }
         if (summary != null) {
             // 与排序按钮的图标同落在 16dp 页边距上：外层只给了 4dp，这里补 TextButton 的 12dp
             Text(

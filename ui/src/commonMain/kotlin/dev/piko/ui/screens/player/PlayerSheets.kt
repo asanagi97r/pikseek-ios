@@ -615,6 +615,8 @@ internal fun PlayerSettingsPanel(
     aspectRatio: PlayerAspectRatio?,
     onAspectRatioChange: (PlayerAspectRatio) -> Unit,
     modifier: Modifier = Modifier,
+    // 排在最后的一节（PikSeek 的进度条分段），没有时不占地方
+    extra: @Composable () -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -656,6 +658,7 @@ internal fun PlayerSettingsPanel(
                 )
             }
         }
+        extra()
     }
 }
 

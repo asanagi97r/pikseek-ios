@@ -1,5 +1,8 @@
 package dev.pikseek.desktop
 
+import dev.pikseek.thumbnail.AudioPrint
+import dev.pikseek.thumbnail.EpisodeMatcher
+import dev.pikseek.thumbnail.MediaMarks
 import dev.pikseek.thumbnail.PreviewDensity
 import dev.pikseek.thumbnail.PreviewPackName
 import dev.pikseek.thumbnail.ThumbnailCache
@@ -21,7 +24,13 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.AfterTest
 import kotlin.test.Test
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.sin
+import kotlin.random.Random
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -58,6 +67,13 @@ class PreviewCacheJobsTest {
         ),
         "sub" to listOf(video("c", "c.mp4", gcidC)),
         "cache" to listOf(video("never", "不该被扫到.mp4", "E".repeat(40))),
+        // 一部剧的三集，每集 24 分钟；还有一个 2 小时的（不是剧集，不认片头片尾）
+        "series" to listOf(
+            episode("e3", "第03话.mp4", "3".repeat(40)),
+            episode("e1", "第01话.mp4", "1".repeat(40)),
+            episode("e2", "第02话.mp4", "2".repeat(40)),
+            FileStat(kind = "drive#file", id = "movie", name = "剧场版.mp4", parentId = "series", size = "1000000", hash = "9".repeat(40), params = mapOf("duration" to "7200")),
+        ),
         "hls" to listOf(
             FileStat(kind = "drive#file", id = "m3u8-ok", name = "ok.m3u8", mimeType = "video/mpegurl", size = "1000", hash = "D".repeat(40)),
             FileStat(kind = "drive#file", id = "m3u8-none", name = "none.m3u8", mimeType = "video/mpegurl", size = "1000", hash = "F".repeat(40)),
@@ -73,7 +89,58 @@ class PreviewCacheJobsTest {
         openSources = { _, durationMs -> listOf(FakeSource(durationMs)) },
         // 列表里没时长的：一个查得到（文件详情里有），一个查不到
         probeDurationMs = { id -> if (id == "m3u8-ok") 600_000L else 0L },
+        episodeAudio = { id, durationMs -> audioRequests += id; episodeSound(id, durationMs) },
     )
+
+    private val audioRequests = ConcurrentHashMap.newKeySet<String>()
+    private val rate = AudioPrint.SAMPLE_RATE
+
+    /** 片头曲在第 n 集的开场戏之后：第 1 集 20 秒、第 2 集 40 秒、第 3 集 60 秒，长 80 秒；片尾曲在结尾那段的第 30 秒起。 */
+    private fun introStartSeconds(id: String): Int = 20 * (id.removePrefix("e").toIntOrNull() ?: 1)
+
+    private fun episodeSound(id: String, durationMs: Long): EpisodeMatcher.Episode {
+        val n = id.removePrefix("e").toIntOrNull() ?: 0
+        val cold = introStartSeconds(id)
+        val head = join(noise(cold, 10 + n), song(80, 7), noise(300 - cold - 80, 20 + n))
+        val tail = join(noise(30, 30 + n), song(70, 8), noise(240 - 30 - 70, 40 + n))
+        return EpisodeMatcher.Episode(id, AudioPrint.of(head, 0), AudioPrint.of(tail, durationMs - 240_000))
+    }
+
+    private fun song(seconds: Int, seed: Int): ShortArray {
+        val random = Random(seed)
+        val out = ShortArray(seconds * rate)
+        var chord = DoubleArray(3)
+        var texture = 0.0
+        var last = 0.0
+        for (i in out.indices) {
+            if (i % (rate / 4) == 0) chord = DoubleArray(3) { 200.0 + random.nextDouble() * 2300 }
+            if (i % (rate / 8) == 0) texture = 500 + random.nextDouble() * 2500
+            last = 0.5 * last + 0.5 * (random.nextDouble() - 0.5) * 2 * texture
+            out[i] = (chord.sumOf { sin(2 * PI * it * i / rate) } * 3000 + last).toInt().coerceIn(-32000, 32000).toShort()
+        }
+        return out
+    }
+
+    private fun noise(seconds: Int, seed: Int): ShortArray {
+        val random = Random(seed)
+        var level = 0.0
+        var last = 0.0
+        return ShortArray(seconds * rate) { i ->
+            if (i % (rate / 5) == 0) level = random.nextDouble() * 6000
+            last = 0.7 * last + 0.3 * (random.nextDouble() - 0.5) * 2 * level
+            last.toInt().toShort()
+        }
+    }
+
+    private fun join(vararg parts: ShortArray): ShortArray {
+        val out = ShortArray(parts.sumOf { it.size })
+        var at = 0
+        for (part in parts) {
+            part.copyInto(out, at)
+            at += part.size
+        }
+        return out
+    }
 
     @AfterTest
     fun cleanUp() {
@@ -143,6 +210,85 @@ class PreviewCacheJobsTest {
         assertEquals(60, imported?.frameCount)
     }
 
+    @Test
+    fun scenesAreMarkedOnceAndHandEditedOnesAreLeftAlone(): Unit = runBlocking {
+        val request = PreviewCacheRequest(PreviewCacheTarget.Folder("root", "根"), PreviewDensity.Medium, includeSubfolders = true, overwrite = false, scenes = true)
+        val state = run(request)
+        assertEquals(2, state.marked)
+        val marks = assertNotNull(store.marks[gcidA])
+        assertTrue(marks.scenesDone)
+        assertEquals(gcidA, marks.gcid)
+        assertTrue(marks.scenes.size <= 10 && marks.scenes.all { it in 1 until 600_000 }, "${marks.scenes}")
+        assertTrue(state.summary!!.contains("场景分点 2 个"), state.summary)
+
+        // 再跑一次：做过的不再做
+        assertEquals(0, run(request).marked)
+        // 手改过的：连「已有的也重做」也不动
+        val edited = marks.copy(scenes = emptyList()).withScene(300_000)
+        store.marks[gcidA] = edited
+        run(PreviewCacheRequest(PreviewCacheTarget.Folder("root", "根"), PreviewDensity.Medium, includeSubfolders = true, overwrite = true, scenes = true))
+        assertEquals(listOf(300_000L), store.marks.getValue(gcidA).scenes)
+    }
+
+    @Test
+    fun aFailedRedoStillMarksScenesFromThePackAlreadyOnTheDrive(): Unit = runBlocking {
+        val file = folders.getValue("root").first()
+        run(PreviewCacheRequest(PreviewCacheTarget.Files(listOf(file)), PreviewDensity.Medium, false, true))
+        // 另一台设备：本机没有缓存，原画一帧都读不下来
+        val otherCache = ThumbnailCache(Files.createTempDirectory("preview-broken").toString(), WebpSpriteCodec)
+        val broken = PreviewCacheJobs(
+            scope = scope,
+            cloud = store,
+            cache = otherCache,
+            engine = ThumbnailEngine(otherCache),
+            listFolder = { folders.getValue(it) },
+            openSources = { _, _ -> listOf(DeadSource()) },
+        )
+        broken.enqueue(PreviewCacheRequest(PreviewCacheTarget.Files(listOf(file)), PreviewDensity.Medium, false, true, scenes = true))
+        val state = withTimeout(60_000) {
+            while (!broken.state.value.running && broken.state.value.summary == null) delay(20)
+            while (broken.state.value.running || broken.state.value.summary == null) delay(20)
+            broken.state.value
+        }
+        assertEquals(mapOf("取不出画面（没有转码流，原画读不下来）" to 1), state.failures)
+        assertEquals(1, state.marked, "预览没重做成，分点照样用网盘上的包做")
+        assertTrue(store.marks.getValue(gcidA).scenesDone)
+        assertTrue(store.packs.value.getValue(gcidA).name.isComplete, "网盘上原来的包还在")
+    }
+
+    private class DeadSource : ThumbnailSource {
+        override val description = "原画"
+        override val maxParallel = 1
+        override val networkBytes = 0L
+
+        override suspend fun frameNear(timeMs: Long): ThumbnailFrame? = null
+
+        override fun close() = Unit
+    }
+
+    @Test
+    fun episodesInAFolderGetTheirIntroAndOutro(): Unit = runBlocking {
+        val state = run(PreviewCacheRequest(PreviewCacheTarget.Folder("series", "剧"), PreviewDensity.Low, includeSubfolders = false, overwrite = false, episodes = true))
+        assertEquals(3, state.episodesChecked)
+        assertEquals(3, state.episodesFound)
+        assertTrue("movie" !in audioRequests, "两小时的不是剧集，不去读它的声音")
+        for (n in 1..3) {
+            val marks = assertNotNull(store.marks[n.toString().repeat(40)], "第 $n 集")
+            val intro = assertNotNull(marks.intro, "第 $n 集的片头")
+            assertTrue(abs(intro.startMs - introStartSeconds("e$n") * 1000L) <= 1_500, "第 $n 集片头开头 ${intro.startMs}")
+            assertTrue(abs(intro.lengthMs - 80_000) <= 3_000, "第 $n 集片头长 ${intro.lengthMs}")
+            val outro = assertNotNull(marks.outro, "第 $n 集的片尾")
+            assertTrue(abs(outro.startMs - (1_440_000 - 240_000 + 30_000)) <= 1_500, "第 $n 集片尾开头 ${outro.startMs}")
+            assertTrue(marks.episodeDone)
+        }
+        assertNull(store.marks["9".repeat(40)]?.intro)
+
+        // 认过的不再认：一次都不再读声音
+        audioRequests.clear()
+        run(PreviewCacheRequest(PreviewCacheTarget.Folder("series", "剧"), PreviewDensity.Low, includeSubfolders = false, overwrite = false, episodes = true))
+        assertTrue(audioRequests.isEmpty(), "又读了：$audioRequests")
+    }
+
     private suspend fun run(request: PreviewCacheRequest): PreviewJobsState {
         jobs.enqueue(request)
         return withTimeout(120_000) {
@@ -157,6 +303,9 @@ class PreviewCacheJobsTest {
         FileStat(kind = "drive#file", id = id, name = name, size = "1000000", hash = gcid, params = mapOf("duration" to "600.4"))
 
     private fun folder(id: String, name: String) = FileStat(kind = FileKind.FOLDER, id = id, name = name)
+
+    private fun episode(id: String, name: String, gcid: String) =
+        FileStat(kind = "drive#file", id = id, name = name, parentId = "series", size = "1000000", hash = gcid, params = mapOf("duration" to "1440"))
 
     private inner class FakeSource(private val durationMs: Long) : ThumbnailSource {
         override val description = "假的"
@@ -189,6 +338,14 @@ class PreviewCacheJobsTest {
             val id = "pack-${uploads.incrementAndGet()}"
             this.bytes[id] = bytes
             return CloudPack(id, name).also { pack -> _packs.value = _packs.value + (name.gcid to pack) }
+        }
+
+        val marks = ConcurrentHashMap<String, MediaMarks>()
+
+        override suspend fun loadMarks(gcid: String): MediaMarks? = marks[gcid.uppercase()]
+
+        override suspend fun saveMarks(marks: MediaMarks) {
+            this.marks[marks.gcid.uppercase()] = marks
         }
     }
 }

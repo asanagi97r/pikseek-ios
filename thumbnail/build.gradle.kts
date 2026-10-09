@@ -25,6 +25,8 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(libs.junit)
+                // 试分类模型（yolo26n-cls-porn）用：只在测试里，程序本体不带
+                implementation("com.microsoft.onnxruntime:onnxruntime:1.22.0")
             }
         }
     }
@@ -38,4 +40,6 @@ tasks.withType<Test> {
     dependsOn(":desktopApp:bundledAppResources")
     systemProperty("pikseek.mpv.dir", mpvDirectory.get().asFile.absolutePath)
     systemProperty("pikseek.testdata", rootProject.file("testdata/media").absolutePath)
+    // 分类模型放在项目内的 _runtime/pikseek/models（不进 git）；没有时相关测试跳过
+    systemProperty("pikseek.models", rootProject.file("../../_runtime/pikseek/models").absolutePath)
 }

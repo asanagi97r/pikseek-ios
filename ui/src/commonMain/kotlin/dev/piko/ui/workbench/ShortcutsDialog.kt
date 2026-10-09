@@ -86,6 +86,7 @@ internal fun ShortcutsDialog(modifier: ShortcutModifier, onDismiss: () -> Unit) 
             "Backspace" to "恢复原速",
             "C" to "开关字幕",
             "PageUp / PageDown" to "上一集、下一集",
+            ", / ." to "上一个、下一个分点（进度条上的场景分点、片头片尾）",
             "F" to "全屏",
             "R" to "画面顺时针旋转 90 度",
         ),

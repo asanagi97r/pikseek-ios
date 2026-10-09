@@ -110,6 +110,10 @@ fun PreviewCacheDialog(target: PreviewCacheTarget, onDismiss: () -> Unit) {
     var includeSubfolders by rememberSaveable { mutableStateOf(false) }
     var overwrite by rememberSaveable { mutableStateOf(false) }
     var density by remember { mutableStateOf(lastDensity) }
+    var scenes by remember { mutableStateOf(lastScenes) }
+    var episodes by remember { mutableStateOf(lastEpisodes) }
+    // 认片头片尾要几集互相比：只点了一个视频时没得比
+    val canCompare = control.canFindEpisodes && (isFolder || (target as PreviewCacheTarget.Files).files.size > 1)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -140,6 +144,19 @@ fun PreviewCacheDialog(target: PreviewCacheTarget, onDismiss: () -> Unit) {
                     }
                     Text(densityHint(density), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                CheckRow(
+                    "同时标场景分点",
+                    "找出换场景的地方，在进度条上画刻度、拖动时吸住。每个视频多取几十帧，约多花预览三分之一的时间。",
+                    scenes,
+                ) { scenes = it }
+                if (canCompare) {
+                    CheckRow(
+                        "认片头片尾（剧集）",
+                        "同一个文件夹里的几集互相比声音，认出片头曲、片尾曲，播放时可一键跳过。" +
+                            "每集要读开头 5 分钟、结尾 4 分钟（低清转码流约几十 MB）。75 分钟以上的不认。",
+                        episodes,
+                    ) { episodes = it }
+                }
                 if (isFolder) {
                     CheckRow("包括子文件夹", null, includeSubfolders) { includeSubfolders = it }
                     CheckRow(
@@ -149,7 +166,7 @@ fun PreviewCacheDialog(target: PreviewCacheTarget, onDismiss: () -> Unit) {
                     ) { overwrite = it }
                 }
                 Text(
-                    "存在网盘根目录的「${PreviewCloud.FOLDER_NAME}」文件夹里，每个视频一个几百 KB 的文件。" +
+                    "存在网盘根目录的「${PreviewCloud.FOLDER_NAME}」文件夹里，每个视频一个几百 KB 的预览、一个很小的分段文件。" +
                         "按视频内容（PikPak 的 GCID）认：视频改名、移动到别的文件夹都还认得。",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -160,6 +177,8 @@ fun PreviewCacheDialog(target: PreviewCacheTarget, onDismiss: () -> Unit) {
         confirmButton = {
             TextButton(onClick = {
                 lastDensity = density
+                lastScenes = scenes
+                if (canCompare) lastEpisodes = episodes
                 control.start(
                     PreviewCacheRequest(
                         target = target,
@@ -167,6 +186,8 @@ fun PreviewCacheDialog(target: PreviewCacheTarget, onDismiss: () -> Unit) {
                         includeSubfolders = isFolder && includeSubfolders,
                         // 点名的视频：再点一次就是要重做
                         overwrite = !isFolder || overwrite,
+                        scenes = scenes,
+                        episodes = canCompare && episodes,
                     ),
                 )
                 onDismiss()
@@ -225,5 +246,7 @@ private fun densityHint(density: PreviewDensity): String = when (density) {
 
 private fun percent(fraction: Float): String = "${(fraction.coerceIn(0f, 1f) * 100).toInt()}%"
 
-/** 上次选的档次，弹窗再开时沿用。只在这次运行里记着。 */
+/** 上次选的档次与勾选，弹窗再开时沿用。只在这次运行里记着。 */
 private var lastDensity: PreviewDensity = PreviewDensity.Medium
+private var lastScenes: Boolean = true
+private var lastEpisodes: Boolean = false

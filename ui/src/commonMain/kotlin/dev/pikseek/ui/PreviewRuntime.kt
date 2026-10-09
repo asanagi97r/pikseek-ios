@@ -5,26 +5,38 @@ import dev.piko.shared.media.PlayableMediaInfo
 import dev.piko.ui.PikoServices
 import dev.pikseek.platform.AppSettings
 import dev.pikseek.platform.ThumbnailDensity
+import dev.pikseek.thumbnail.AudioDecoder
+import dev.pikseek.thumbnail.EpisodeMatcher
+import dev.pikseek.thumbnail.EpisodeSound
 import dev.pikseek.thumbnail.FrameGrabber
 import dev.pikseek.thumbnail.MediaFingerprint
+import dev.pikseek.thumbnail.MediaMarks
 import dev.pikseek.thumbnail.PreviewDensity
+import dev.pikseek.thumbnail.SceneAnalysis
 import dev.pikseek.thumbnail.SeekingSource
 import dev.pikseek.thumbnail.ThumbnailCache
 import dev.pikseek.thumbnail.ThumbnailEngine
 import dev.pikseek.thumbnail.ThumbnailFrame
 import dev.pikseek.thumbnail.ThumbnailSource
+import dev.pikseek.thumbnail.ThumbnailState
 import dev.pikseek.thumbnail.TsSliceSource
 import dev.pikseek.ui.player.WebpSpriteCodec
 import dev.pikseek.ui.preview.PreviewCacheJobs
 import dev.pikseek.ui.preview.PreviewCacheRequest
 import dev.pikseek.ui.preview.PreviewCloud
 import kotlin.concurrent.Volatile
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import dev.pikseek.ui.rating.FileRatings
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -36,6 +48,7 @@ import kotlinx.coroutines.withContext
  * @param tempDirectory 切出来的单帧小文件临时放哪
  * @param newGrabber 建一个取帧解码器；这个平台眼下建不出来时返回 null（做不了预览）。在后台线程上调
  * @param fileLength 本机文件的字节数，读不到为 0
+ * @param newAudioDecoder 建一个解声音的解码器，认片头片尾用；这个平台解不了时为 null（不认片头片尾）
  */
 class PreviewRuntime(
     val settings: AppSettings,
@@ -44,6 +57,7 @@ class PreviewRuntime(
     private val tempDirectory: String,
     private val newGrabber: () -> FrameGrabber?,
     private val fileLength: (String) -> Long,
+    private val newAudioDecoder: (() -> AudioDecoder?)? = null,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val cache = ThumbnailCache(cacheDirectory, WebpSpriteCodec)
@@ -57,7 +71,20 @@ class PreviewRuntime(
         listFolder = { services.driveRepository.listAllFiles(it).getOrThrow() },
         openSources = { fileId, durationMs -> openSources(fileId, null, durationMs) },
         probeDurationMs = ::probeDurationMs,
+        episodeAudio = if (newAudioDecoder != null) ::episodeAudio else null,
     )
+
+    /** 收藏与讨厌，网盘页、播放器经 LocalFileRatings 取用。状态在主线程上改。 */
+    val ratings = FileRatings(
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+        store = cloud,
+        setStarred = services.driveRepository::setStarred,
+        accounts = services.clientManager.currentClient.map { it?.account },
+    )
+
+    // 这次运行里读过、改过的分段：gcid → 最新的一份。改分段与后台做完的分点都先落到这里，再传到网盘
+    private val marksLock = Mutex()
+    private val knownMarks = HashMap<String, MediaMarks>()
 
     /**
      * 网盘的文件列表里没给时长时（有些 m3u8 就这样）再找：先查文件详情（各画质版本各带着时长），
@@ -90,6 +117,105 @@ class PreviewRuntime(
         }
     }
 
+    /**
+     * 一集开头、结尾的声音指纹。转码流按字节读那两段（几十 MB），没有转码流时让解码器在原画上按索引跳过去读。
+     */
+    private suspend fun episodeAudio(fileId: String, durationMs: Long): EpisodeMatcher.Episode? {
+        val decoder = newAudioDecoder?.invoke() ?: return null
+        val sound = EpisodeSound(decoder, tempDirectory)
+        val streams = services.mediaRepository.openThumbnailStreams(fileId, durationMs).getOrNull() ?: return null
+        return streams.use {
+            suspend fun print(span: MediaMarks.Span) = attempt {
+                it.transcode?.let { transcode -> sound.fromTs(transcode.reader, durationMs, span.startMs, span.lengthMs) }
+            } ?: it.originalUrl?.let { url -> attempt { sound.fromLocation(url, span.startMs, span.lengthMs) } }
+            val head = print(EpisodeSound.headSpan(durationMs))
+            val tail = print(EpisodeSound.tailSpan(durationMs))
+            PikoLog.i(TAG, "片头片尾的声音：开头${if (head != null) "有" else "无"}、结尾${if (tail != null) "有" else "无"}，读了 ${sound.networkBytes / (1024 * 1024)} MB")
+            EpisodeMatcher.Episode(fileId, head, tail)
+        }
+    }
+
+    /** 做 [block]，出错（取消除外）当作没有。 */
+    private suspend fun <T> attempt(block: suspend () -> T?): T? = try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        PikoLog.w(TAG, "取声音失败：${e::class.simpleName}")
+        null
+    }
+
+    /** [gcid] 的分段：这次运行里记着的，没有再去网盘取。都没有为 null。 */
+    private suspend fun loadMarks(gcid: String): MediaMarks? {
+        marksLock.withLock { knownMarks[gcid] }?.let { return it }
+        val loaded = attempt { cloud.loadMarks(gcid) } ?: return null
+        return marksLock.withLock { knownMarks.getOrPut(gcid) { loaded } }
+    }
+
+    /** 记下并传到网盘（在后台，失败只记日志，界面上的改动照样生效）。认不出的视频（没有 gcid）只记不传。 */
+    fun saveMarks(marks: MediaMarks) {
+        scope.launch {
+            marksLock.withLock { knownMarks[marks.gcid] = marks }
+            if (marks.gcid.isBlank()) return@launch
+            try {
+                cloud.saveMarks(marks)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                PikoLog.w(TAG, "分段没存到网盘：${e::class.simpleName}")
+            }
+        }
+    }
+
+    /**
+     * 播放页用：读出这个视频的分段交给 [onMarks]（没有时交一份空的，好让人手动加）。
+     * 还没做过场景分点、设置里开着、而这次的预览做齐了，就在后台做一次：用预览帧粗分，
+     * 再另开一路画面来源取几十帧细化（只在主播放器闲着时取），做好存到网盘。调用方取消即停。
+     */
+    suspend fun followMarks(
+        fileId: String,
+        info: PlayableMediaInfo?,
+        localPath: String?,
+        durationMs: Long,
+        session: ThumbnailEngine.Session,
+        busy: StateFlow<Boolean>,
+        onMarks: (MediaMarks) -> Unit,
+    ) {
+        val roundedDuration = durationMs / 1000 * 1000
+        if (roundedDuration <= 0) return
+        val gcid = info?.gcid.orEmpty().uppercase()
+        val marks = (if (gcid.isNotBlank()) loadMarks(gcid) else null) ?: MediaMarks(gcid = gcid, durationMs = roundedDuration)
+        onMarks(marks)
+        if (marks.scenesDone || !settings.sceneMarks.value) return
+        val finished = session.progress.first { it.state == ThumbnailState.Complete || it.state == ThumbnailState.Unavailable }
+        if (finished.state != ThumbnailState.Complete) return
+        val frames = session.frames()
+        if (frames.size < MIN_SCENE_FRAMES) return
+        val sources = attempt { openSources(fileId, localPath, roundedDuration) }.orEmpty()
+        val scenes = try {
+            val source = sources.firstOrNull()
+            SceneAnalysis.analyze(frames, session.plan.durationMs, fetch = source?.let { s ->
+                { time ->
+                    // 主播放器要带宽时等它
+                    busy.first { !it }
+                    s.frameNear(time)
+                }
+            })
+        } finally {
+            sources.forEach { runCatching { it.close() } }
+        }
+        PikoLog.i(TAG, "看视频时做了场景分点：${scenes.size} 个")
+        // 做的这会儿用户可能已经手动改过：以最新的为准，手动改过的不覆盖
+        val latest = marksLock.withLock { knownMarks[gcid] } ?: marks
+        if (latest.scenesEdited || latest.scenesDone) {
+            onMarks(latest)
+            return
+        }
+        val done = latest.copy(scenes = scenes, scenesDone = true)
+        saveMarks(done)
+        onMarks(done)
+    }
+
     val environment = PikSeekEnvironment(
         settings = settings,
         previewCache = object : PreviewCacheControl {
@@ -105,6 +231,7 @@ class PreviewRuntime(
             override val packs = cloud.packs
             override val live = this@PreviewRuntime.jobs.live
             override val jobs = this@PreviewRuntime.jobs.state
+            override val canFindEpisodes = newAudioDecoder != null
 
             override fun refresh() {
                 scope.launch { cloud.refresh() }
@@ -239,5 +366,8 @@ class PreviewRuntime(
 
     private companion object {
         const val TAG = "Preview"
+
+        // 预览帧少于这么多不做场景分点：太稀了分不准
+        const val MIN_SCENE_FRAMES = 8
     }
 }

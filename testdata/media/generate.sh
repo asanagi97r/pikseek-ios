@@ -20,3 +20,7 @@ ffmpeg -y -v error "${video[@]}" "${audio[@]}" -c:v msmpeg4 -vtag DIV3 -b:v 150k
 # real_144 只接受 8 kHz 单声道
 ffmpeg -y -v error "${video[@]}" -f lavfi -i sine=frequency=440:sample_rate=8000:duration=4 -c:v rv20 -b:v 150k -c:a real_144 -ac 1 -ar 8000 rv20-ra144.rm
 ffmpeg -y -v error "${video[@]}" "${audio[@]}" -c:v mpeg4 -b:v 150k -c:a aac -b:a 64k -movflags +faststart control-mpeg4-aac.mp4
+
+# 认片头片尾取声音用：60 秒的 TS（与 PikPak 的转码流同样是 H.264 + AAC、5 秒一个关键帧），全程静音，只有 40～42 秒一声 1 kHz 的「嘀」
+ffmpeg -y -v error "${video[@]/duration=4/duration=60}" -f lavfi -i "aevalsrc=if(between(t\,40\,42)\,0.5*sin(2*PI*1000*t)\,0):s=44100:d=60" \
+    -c:v libx264 -preset veryfast -g 125 -keyint_min 125 -sc_threshold 0 -b:v 60k -c:a aac -b:a 48k -ac 1 -f mpegts -muxdelay 0 beep-at-40s.ts

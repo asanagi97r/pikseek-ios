@@ -1,6 +1,12 @@
 package dev.piko.ui.components
 
 import dev.pikseek.ui.preview.PreviewCacheBadge
+import dev.piko.shared.state.FileRating
+import dev.pikseek.ui.rating.LocalFileRatings
+import dev.pikseek.ui.rating.RatingButton
+import dev.pikseek.ui.rating.RatingMark
+import dev.pikseek.ui.rating.ratingButtonShown
+import dev.pikseek.ui.rating.ratingOf
 import dev.piko.shared.data.isVaulted
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.foundation.background
@@ -33,6 +39,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -271,9 +278,23 @@ fun FileListItem(
         },
         onClick = onClick,
         onMoreClick = onDetailsClick,
-        trailing = { ItemDetailsButton(visible = !detailsOnHover || hovered, onClick = onDetailsClick) },
+        trailing = {
+            // PikSeek：收藏按钮排在详情前面；标过的一直在，没标的与详情一样悬停才出来
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (ratingButtonShown(file, hovered, isSelectionMode = false)) {
+                    RatingButton(
+                        file,
+                        containerColor = Color.Transparent,
+                        neutralColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        size = 36.dp,
+                        iconSize = 20.dp,
+                    )
+                }
+                ItemDetailsButton(visible = !detailsOnHover || hovered, onClick = onDetailsClick)
+            }
+        },
         modifier = modifier.hoverable(hover),
-        badge = itemMarks(file, folderHasVault),
+        badge = itemMarks(file, folderHasVault, rating = if (LocalFileRatings.current != null) FileRating.NONE else ratingOf(file)),
         supporting = {
             Column {
                 if (tags.isNotEmpty() || code != null) MediaTagRow(tags = tags, lead = code, modifier = Modifier.padding(vertical = 2.dp))
@@ -404,12 +425,17 @@ fun VaultMark(inFolder: Boolean, modifier: Modifier = Modifier) {
  * 标题旁的标记：星标与归档，都没有时为 null。[folderHasVault] 是文件夹里直接放着归档条目，
  * 见 PikoDriveRepository.vaultedFolders。
  */
-fun itemMarks(file: FileStat, folderHasVault: Boolean): (@Composable () -> Unit)? {
+fun itemMarks(
+    file: FileStat,
+    folderHasVault: Boolean,
+    /** PikSeek：星标画成红心，讨厌画成心碎（见 RatingMark）。行上已有收藏按钮时调用方给 NONE，不重复画。 */
+    rating: FileRating = if (file.isStarred) FileRating.LIKED else FileRating.NONE,
+): (@Composable () -> Unit)? {
     val vault = file.isVaulted || (file.isFolder && folderHasVault)
-    if (!file.isStarred && !vault) return null
+    if (rating == FileRating.NONE && !vault) return null
     return {
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (file.isStarred) StarMark()
+            RatingMark(rating)
             if (vault) VaultMark(inFolder = file.isFolder)
         }
     }

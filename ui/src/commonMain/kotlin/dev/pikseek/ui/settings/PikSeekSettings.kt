@@ -18,6 +18,8 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.FastForward
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Insights
+import androidx.compose.material.icons.outlined.LinearScale
+import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.PanTool
 import androidx.compose.material.icons.outlined.Speed
@@ -66,11 +68,13 @@ fun PreviewSettingsRows(snackbarHostState: SnackbarHostState) {
     val dragSeek by settings.dragSeekMode.collectAsState()
     val prefetchNext by settings.prefetchNext.collectAsState()
     val overlay by settings.performanceOverlay.collectAsState()
+    val sceneMarks by settings.sceneMarks.collectAsState()
+    val autoSkip by settings.autoSkipIntro.collectAsState()
     var cacheBytes by remember { mutableLongStateOf(-1L) }
     var dialog by remember { mutableStateOf<Dialog?>(null) }
     LaunchedEffect(Unit) { cacheBytes = environment.previewCache.totalBytes() }
 
-    val count = 8
+    val count = 10
     SettingsSwitchRow(
         index = 0, count = count,
         icon = Icons.Outlined.PhotoLibrary,
@@ -119,6 +123,22 @@ fun PreviewSettingsRows(snackbarHostState: SnackbarHostState) {
     )
     SettingsSwitchRow(
         index = 5, count = count,
+        icon = Icons.Outlined.LinearScale,
+        title = "进度条场景分点",
+        supporting = "预览做齐后自动找出换场景的地方，在进度条上画刻度，拖动时吸住。逗号、句号跳上一段、下一段；进度条上右键可增删",
+        checked = sceneMarks,
+        onCheckedChange = settings::setSceneMarks,
+    )
+    SettingsSwitchRow(
+        index = 6, count = count,
+        icon = Icons.Outlined.SkipNext,
+        title = "自动跳过片头片尾",
+        supporting = "认出了片头片尾的剧集，播到那里直接跳过（片尾跳到下一集）。关着时只显示「跳过」按钮",
+        checked = autoSkip,
+        onCheckedChange = settings::setAutoSkipIntro,
+    )
+    SettingsSwitchRow(
+        index = 7, count = count,
         icon = Icons.Outlined.FastForward,
         title = "预先准备下一条",
         supporting = "播放时提前查好下一个视频的信息（不下载视频），切换时更快",
@@ -126,7 +146,7 @@ fun PreviewSettingsRows(snackbarHostState: SnackbarHostState) {
         onCheckedChange = settings::setPrefetchNext,
     )
     SettingsSwitchRow(
-        index = 6, count = count,
+        index = 8, count = count,
         icon = Icons.Outlined.Speed,
         title = "性能浮层",
         supporting = "在播放窗口左上角显示起播、拖动、换集的耗时与预览进度",
@@ -134,7 +154,7 @@ fun PreviewSettingsRows(snackbarHostState: SnackbarHostState) {
         onCheckedChange = settings::setPerformanceOverlay,
     )
     SettingsNavigationRow(
-        index = 7, count = count,
+        index = 9, count = count,
         icon = Icons.Outlined.Insights,
         title = "导出性能样本",
         supporting = "本次运行记下的各项耗时，存成文本，可与 Piko 在同一批视频上的数字对比。只在本机",

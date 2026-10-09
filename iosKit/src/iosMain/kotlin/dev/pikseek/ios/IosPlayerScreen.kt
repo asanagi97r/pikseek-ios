@@ -37,6 +37,7 @@ import dev.piko.ui.screens.player.siblingMedia
 import dev.pikseek.performance.PerformanceMetrics
 import dev.pikseek.ui.PreviewRuntime
 import dev.pikseek.ui.player.LocalTimelinePreview
+import dev.pikseek.ui.player.LocalPlaybackSettings
 import dev.pikseek.ui.player.PerformanceOverlay
 import dev.pikseek.ui.player.TimelinePreview
 import io.github.nihildigit.pikpak.FileStat
@@ -117,7 +118,14 @@ internal fun IosPlayerScreen(
     val showPerformance by appSettings.performanceOverlay.collectAsState()
     val prefetchNext by appSettings.prefetchNext.collectAsState()
     val timelinePreview = remember(state) { TimelinePreview(dragSeekMode = { appSettings.dragSeekMode.value }, seek = state::seekTo) }
+    // 顶栏的收藏按钮作用于正在播的这一集；同目录列表到了才对得上号
+    LaunchedEffect(timelinePreview, state.fileId, siblingVideos) {
+        timelinePreview.ratingFile = siblingVideos.find { it.id == state.fileId }
+    }
     LaunchedEffect(state, prefetchNext) { state.prefetchNext = prefetchNext }
+    // 连续播放与播放顺序：底栏按钮与播放设置里改的都是这份设置，换了马上生效
+    LaunchedEffect(state) { appSettings.continuousPlay.collect { state.continuousPlay = it } }
+    LaunchedEffect(state) { appSettings.playOrder.collect { state.playOrder = it } }
     // 主播放器要带宽的时候（起播、缓冲、拖动后）缩略图让路；缓冲得够多或暂停着时才开第二路
     val playerBusy = remember(state) { snapshotFlow { state.needsBandwidth }.stateIn(scope, SharingStarted.Eagerly, true) }
     val previewWorkers = remember(state) {
@@ -144,7 +152,21 @@ internal fun IosPlayerScreen(
             parallelism = previewWorkers,
         ) ?: return@LaunchedEffect
         timelinePreview.session = session
+        timelinePreview.saveMarks = preview::saveMarks
+        timelinePreview.autoSkip = { appSettings.autoSkipIntro.value }
         try {
+            // 进度条分段：读网盘上的；没有就等预览做齐后在后台做场景分点（与桌面同一套）
+            launch {
+                preview.followMarks(
+                    fileId = state.fileId,
+                    info = state.mediaInfo,
+                    localPath = request.localPath?.takeIf { state.isLocalPlayback },
+                    durationMs = state.durationMillis,
+                    session = session,
+                    busy = playerBusy,
+                    onMarks = { timelinePreview.marks = it },
+                )
+            }
             // 跳到了别处：把那附近的缩略图提前做
             launch {
                 var last = state.positionMillis
@@ -209,7 +231,7 @@ internal fun IosPlayerScreen(
         } else {
             IosPlayerSurface(player, Modifier.fillMaxSize())
 
-            CompositionLocalProvider(LocalTimelinePreview provides timelinePreview) {
+            CompositionLocalProvider(LocalTimelinePreview provides timelinePreview, LocalPlaybackSettings provides appSettings) {
                 MobilePlayerControls(
                     title = state.title,
                     isLocalPlayback = state.isLocalPlayback,

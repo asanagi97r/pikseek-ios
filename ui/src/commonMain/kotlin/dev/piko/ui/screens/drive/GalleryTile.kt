@@ -1,6 +1,15 @@
 package dev.piko.ui.screens.drive
 
 import dev.pikseek.ui.preview.PreviewCacheBadge
+import dev.pikseek.ui.rating.RatingButton
+import dev.pikseek.ui.rating.ratingButtonShown
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import dev.piko.ui.theme.LocalFixedColors
 import androidx.compose.foundation.shape.CircleShape
 import dev.piko.shared.data.isVaulted
@@ -61,10 +70,13 @@ internal fun GalleryTile(
     folderHasVault: Boolean = false,
 ) {
     val shape = MaterialTheme.shapes.small
+    val hover = remember { MutableInteractionSource() }
+    val hovered by hover.collectIsHoveredAsState()
     Box(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1f)
+            .hoverable(hover)
             .focusIndication(shape)
             .clip(shape)
             .cardInteraction(isSelectionMode, isSelected, onClick, onLongClick, onSelectToggle)
@@ -129,8 +141,15 @@ internal fun GalleryTile(
                 modifier = Modifier.align(Alignment.TopEnd).minimumInteractiveComponentSize(),
             )
         } else {
-            // PikSeek：预览缓存做到哪了。多选时右上角给勾选框
-            PreviewCacheBadge(file, Modifier.align(Alignment.TopEnd).padding(6.dp))
+            // PikSeek：预览缓存做到哪了，与收藏按钮同在右上角。多选时右上角给勾选框
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd).padding(5.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PreviewCacheBadge(file)
+                if (ratingButtonShown(file, hovered, isSelectionMode)) RatingButton(file)
+            }
         }
     }
 }

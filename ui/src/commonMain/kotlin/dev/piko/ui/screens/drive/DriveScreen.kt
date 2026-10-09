@@ -75,6 +75,12 @@ import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.outlined.Preview
 import dev.pikseek.ui.LocalPreviewPacks
+import dev.pikseek.ui.rating.LocalFileRatings
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.HeartBroken
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import dev.piko.shared.state.FileRating
+import dev.pikseek.ui.rating.RatingFilterBar
 import dev.pikseek.ui.preview.PreviewCacheButton
 import dev.pikseek.ui.preview.PreviewCacheDialog
 import dev.pikseek.ui.preview.PreviewCacheTarget
@@ -308,6 +314,15 @@ fun DriveScreen(
     var previewCacheTarget by remember { mutableStateOf<PreviewCacheTarget?>(null) }
     // 进网盘页、换文件夹时看一眼网盘上的预览包，角标照它画；列过不久的不重列
     LaunchedEffect(previewPacks, currentFolderId) { previewPacks?.refresh() }
+    // PikSeek：收藏与讨厌。列表的筛选按它判断；换文件夹时顺便读一眼网盘上的讨厌名单（读过不久的不重读）
+    val fileRatings = LocalFileRatings.current
+    LaunchedEffect(fileRatings) {
+        if (fileRatings == null) return@LaunchedEffect
+        state.ratingOf = fileRatings::ratingOf
+        fileRatings.messages.collect { snackbarHostState.showSnackbar(it, withDismissAction = true) }
+    }
+    LaunchedEffect(fileRatings, currentFolderId) { fileRatings?.refresh() }
+    LaunchedEffect(fileRatings, state.files) { fileRatings?.settle(state.files) }
 
     // 视图模式存进偏好，切 Tab 与重启后保持上次的选择
     // 初值同步读：异步给默认值的话，选了列表的用户每次进来都先闪一帧海报墙。DataStore 在
@@ -589,7 +604,16 @@ fun DriveScreen(
         val previewable = files.filter { !it.isVaulted && it.isPlayableVideo() }.takeIf { it.isNotEmpty() && previewPacks != null }?.let { videos ->
             SheetAction(Icons.Outlined.Preview, "预览缓存", { previewCacheTarget = PreviewCacheTarget.Files(videos) })
         }
-        return listOfNotNull(remove, restore, downloadable, previewable) + listOf(
+        // PikSeek：选中的一起收藏、讨厌或清掉标记
+        val rateActions = files.filterNot { it.isVaulted || it.isUploading }.takeIf { it.isNotEmpty() && fileRatings != null }?.let { targets ->
+            val ratings = fileRatings ?: return@let null
+            listOf(
+                SheetAction(Icons.Filled.Favorite, "收藏", { targets.forEach { ratings.set(it, FileRating.LIKED) } }),
+                SheetAction(Icons.Filled.HeartBroken, "讨厌", { targets.filter(ratings::canDislike).forEach { ratings.set(it, FileRating.DISLIKED) } }),
+                SheetAction(Icons.Outlined.FavoriteBorder, "清除收藏与讨厌", { targets.forEach { ratings.set(it, FileRating.NONE) } }),
+            )
+        }.orEmpty()
+        return listOfNotNull(remove, restore, downloadable, previewable) + rateActions + listOf(
             SheetAction(Icons.Outlined.DriveFileMove, "移动到", { moveTargetIds = ids }),
             SheetAction(Icons.Outlined.ContentCopy, "复制到", { copyTargetIds = ids }),
             SheetAction(Icons.Outlined.Edit, "批量重命名", { batchRenameTargets = renamable }),
@@ -648,6 +672,7 @@ fun DriveScreen(
             },
             onTogglePreview = { state.toggleSpoiler(file.id) },
             onToggleStar = { state.setStarred(file, starred = !file.isStarred) },
+            ratings = fileRatings,
             onDownload = { enqueueDownload(file) },
             onDownloadSegment = { segmentSession.open(file) },
             onRename = { startRename(file) },
@@ -1571,7 +1596,7 @@ fun DriveScreen(
 
                                 val bottomPadding = innerPadding.calculateBottomPadding() + FabClearance
                                 // 筛选或图库视图下为空时仍给列表：空目录页没有页眉，筛选撤不掉，视图也切不回去
-                                if (state.displayItems.isEmpty() && state.typeFilter == null && !state.thumbnailsOnly) {
+                                if (state.displayItems.isEmpty() && state.typeFilter == null && state.ratingFilter == null && !state.thumbnailsOnly) {
                                     // 空目录没有列表页眉，面包屑单独放在空状态上方
                                     breadcrumbs()
                                     DriveEmptyState(state = state, modifier = Modifier.weight(1f))
@@ -1617,6 +1642,14 @@ fun DriveScreen(
                                                         },
                                                         // 宽窗口的排序、筛选与视图在命令栏上，页眉只剩搜索结果的说明
                                                         showControls = !pathInTopBar,
+                                                        // PikSeek：只看收藏、讨厌、未标记。库（星标、回收站……）里不给，文件夹里一个文件都没有时也不给
+                                                        ratingFilter = if (fileRatings != null && state.libraryView == null &&
+                                                            (state.ratingFilter != null || state.ratingCounts.isNotEmpty())
+                                                        ) {
+                                                            { RatingFilterBar(state.ratingFilter, state.ratingCounts, state::updateRatingFilter) }
+                                                        } else {
+                                                            null
+                                                        },
                                                     )
                                                 }
                                             }

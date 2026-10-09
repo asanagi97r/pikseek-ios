@@ -52,6 +52,7 @@ class PreviewCacheUiRenderTest {
         override val jobs = MutableStateFlow(
             PreviewJobsState(running = true, label = "文件夹「番剧」及子文件夹", total = 24, made = 6, skipped = 3, current = "第 10 话.mkv", currentFraction = 0.37f, queued = 1),
         )
+        override val canFindEpisodes = true
         override fun refresh() = Unit
         override fun start(request: PreviewCacheRequest) = Unit
         override fun cancel() = Unit
@@ -60,7 +61,7 @@ class PreviewCacheUiRenderTest {
     @Test
     fun dialogAndBadgesRender() {
         val out = System.getenv("PIKSEEK_RENDER_DIR")?.let(::File)?.also { it.mkdirs() }
-        render(420, 760, out?.resolve("preview_cache_dialog.png")) {
+        render(420, 980, out?.resolve("preview_cache_dialog.png")) {
             PreviewCacheDialog(PreviewCacheTarget.Folder("f", "番剧"), onDismiss = {})
         }
         render(420, 140, out?.resolve("preview_cache_badges.png")) {

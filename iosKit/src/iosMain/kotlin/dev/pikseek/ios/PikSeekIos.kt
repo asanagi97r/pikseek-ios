@@ -27,6 +27,7 @@ import dev.pikseek.platform.UserDefaultsSettingsStore
 import dev.pikseek.thumbnail.IosThumbnailPlatform
 import dev.pikseek.ui.LocalPikSeek
 import dev.pikseek.ui.LocalPreviewPacks
+import dev.pikseek.ui.rating.LocalFileRatings
 import dev.pikseek.ui.PreviewRuntime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -164,6 +165,7 @@ object PikSeekIos {
             CompositionLocalProvider(
                 LocalPikSeek provides current.preview.environment,
                 LocalPreviewPacks provides current.preview.environment.previewPacks,
+                LocalFileRatings provides current.preview.ratings,
             ) {
                 PikoApp(
                     services = current.services,

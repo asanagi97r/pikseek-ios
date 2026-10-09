@@ -30,6 +30,9 @@ interface PreviewPackControl {
 
     val jobs: StateFlow<PreviewJobsState>
 
+    /** 这个平台认得了片头片尾（解得了声音）。认不了时弹窗里不给这一项。 */
+    val canFindEpisodes: Boolean get() = false
+
     /** 重列网盘上的预览缓存（列过不久就不重列）。 */
     fun refresh()
 

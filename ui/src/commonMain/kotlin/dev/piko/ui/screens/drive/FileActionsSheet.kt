@@ -2,6 +2,13 @@ package dev.piko.ui.screens.drive
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.HeartBroken
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.HeartBroken
+import dev.piko.shared.state.FileRating
+import dev.pikseek.ui.rating.FileRatings
+import dev.pikseek.ui.rating.LocalFileRatings
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.ContentCut
 import androidx.compose.material.icons.outlined.Delete
@@ -95,8 +102,10 @@ internal fun FileActionsSheet(
         }
     }
 
+    val ratings = LocalFileRatings.current
     val actions = actionsOverride ?: leadingActions + fileActions(
         file = file,
+        ratings = ratings,
         previewHidden = previewHidden,
         onTogglePreview = onTogglePreview,
         onToggleStar = onToggleStar,
@@ -164,6 +173,8 @@ internal fun fileActions(
     isPinned: Boolean = false,
     /** 把文件夹里的文件换成归档记录，腾出空间；为 null 时不给这一项。 */
     onVault: (() -> Unit)? = null,
+    /** PikSeek：有它时星标一项换成「收藏」（红心），再加一项「讨厌」，都经它改；为 null 时照原样给星标。 */
+    ratings: FileRatings? = null,
 ): List<SheetAction> = buildList {
     // 文件夹在宽窗口里可以在新标签页打开，放在最前：它是「打开」的另一种
     if (file.isFolder && onOpenInNewTab != null) add(SheetAction(Icons.Outlined.Tab, "在新标签页打开", onOpenInNewTab))
@@ -179,14 +190,29 @@ internal fun fileActions(
             ),
         )
     }
-    add(
-        SheetAction(
-            // 图标画的是现状，与信息流的星标按钮一致：已加星标时实心，未加时描边
-            icon = if (file.isStarred) Icons.Filled.Star else Icons.Outlined.StarOutline,
-            label = if (file.isStarred) "取消星标" else "添加星标",
-            onClick = onToggleStar,
-        ),
-    )
+    if (ratings != null) {
+        // 图标画的是现状：收藏了是实心红心，讨厌了是心碎
+        val rating = ratings.ratingOf(file)
+        val liked = rating == FileRating.LIKED
+        add(SheetAction(if (liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, if (liked) "取消收藏" else "收藏", {
+            ratings.set(file, if (liked) FileRating.NONE else FileRating.LIKED)
+        }))
+        if (ratings.canDislike(file)) {
+            val disliked = rating == FileRating.DISLIKED
+            add(SheetAction(if (disliked) Icons.Filled.HeartBroken else Icons.Outlined.HeartBroken, if (disliked) "取消讨厌" else "讨厌", {
+                ratings.set(file, if (disliked) FileRating.NONE else FileRating.DISLIKED)
+            }))
+        }
+    } else {
+        add(
+            SheetAction(
+                // 图标画的是现状，与信息流的星标按钮一致：已加星标时实心，未加时描边
+                icon = if (file.isStarred) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                label = if (file.isStarred) "取消星标" else "添加星标",
+                onClick = onToggleStar,
+            ),
+        )
+    }
     if (file.isExtractableArchive || file.isArchiveVolume) add(SheetAction(Icons.Outlined.Unarchive, "解压到当前位置", onExtract))
     // 文件夹连同子文件夹整个下载
     if (!file.isUploading) add(SheetAction(Icons.Outlined.Download, "下载到本地", onDownload))

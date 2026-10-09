@@ -33,6 +33,14 @@ class PreviewPackTest {
     }
 
     @Test
+    fun theCopyNumberTheDriveAddsToADuplicateNameIsTolerated() {
+        // 网盘上传同名文件时另起一个「…(1)」的名字
+        assertEquals(PreviewPackName(gcid, PreviewDensity.Medium, 60, 60), PreviewPackName.parse("${gcid}_M_60of60(1).pspreview"))
+        assertEquals(PreviewPackName(gcid, PreviewDensity.Low, 3, 30), PreviewPackName.parse("${gcid}_L_3of30 (12).pspreview"))
+        assertNull(PreviewPackName.parse("${gcid}_M_60of60(x).pspreview"))
+    }
+
+    @Test
     fun foreignNamesAreIgnored() {
         listOf(
             "${gcid}_M_37of120.webp",

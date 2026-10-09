@@ -1,5 +1,11 @@
 package dev.piko.ui.screens.player
 
+import dev.pikseek.ui.player.LocalTimelinePreview
+import dev.pikseek.ui.player.SkipSegmentButton
+import dev.pikseek.ui.player.PlaybackOrderSection
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import dev.pikseek.ui.player.TimelineMarksSection
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -163,6 +169,9 @@ fun MobilePlayerControls(
     val focusRequester = remember { FocusRequester() }
 
     val currentPosition by rememberUpdatedState(positionMillis)
+    // PikSeek 的进度条分段：逗号、句号跳上一段、下一段，片头片尾里浮出跳过按钮，播放设置里能改
+    val timelinePreview = LocalTimelinePreview.current
+    val currentMarks by rememberUpdatedState(timelinePreview?.marks)
     val currentSpeed by rememberUpdatedState(playbackSpeed)
 
     var controlsVisible by remember { mutableStateOf(true) }
@@ -378,6 +387,8 @@ fun MobilePlayerControls(
             Key.PageUp -> if (hasPrevious) onPrevious() else return false
             Key.PageDown -> if (hasNext) onNext() else return false
             Key.MoveHome -> onSeek(0L)
+            Key.Comma -> onSeek(currentMarks?.previousPoint(currentPosition) ?: 0L)
+            Key.Period -> onSeek(currentMarks?.nextPoint(currentPosition) ?: return false)
             else -> {
                 // 数字键跳到全片的几成处，0 是开头
                 val digit = DigitKeys.indexOf(event.key).takeIf { it >= 0 } ?: return false
@@ -625,6 +636,20 @@ fun MobilePlayerControls(
 
             PlayerBottomStack(controlsVisible = chromeVisible, isLandscape = isLandscape) {
                 snackbarHost()
+                if (!isLocked && errorMessage == null) {
+                    SkipSegmentButton(
+                        preview = timelinePreview,
+                        positionMillis = positionMillis,
+                        hasNext = hasNext,
+                        onSeek = {
+                            interacted()
+                            onSeek(it)
+                        },
+                        onNext = onNext,
+                        // 照流媒体的习惯放在右下角
+                        modifier = Modifier.align(Alignment.End),
+                    )
+                }
                 if (resumedFromMillis != null) {
                     ResumeTipCapsule(
                         visible = showResumeTip && !isLocked,
@@ -687,7 +712,8 @@ fun MobilePlayerControls(
                         bufferedPositionMillis = bufferedPositionMillis,
                         playbackSpeed = playbackSpeed,
                         showEpisodes = hasPlaylist,
-                        showEpisodeSkip = hasPlaylist && !compactWidth,
+                        // PikSeek：窄窗口（iPad 分屏到半边）也给上一集、下一集，原先只能开选集面板换集
+                        showEpisodeSkip = hasPlaylist,
                         compactWidth = compactWidth,
                         hasPrevious = hasPrevious,
                         hasNext = hasNext,
@@ -814,6 +840,12 @@ fun MobilePlayerControls(
                         },
                         aspectRatio = aspectRatio,
                         onAspectRatioChange = onAspectRatioChange,
+                        extra = {
+                            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                                PlaybackOrderSection()
+                                TimelineMarksSection(timelinePreview, positionMillis)
+                            }
+                        },
                     )
                     // 选完不收面板：换字幕要看一眼效果，不对再换
                     PlayerSheet.Tracks -> TracksPanel(

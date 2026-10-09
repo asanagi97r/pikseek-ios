@@ -17,10 +17,12 @@ $data = Join-Path $Out 'selfdata'
 if (Test-Path $data) { Get-ChildItem $data -Recurse -Force | Sort-Object FullName -Descending | ForEach-Object { $_.Delete() } }
 $env:PIKSEEK_DATA_DIR = $data
 $sample = Join-Path $PSScriptRoot 'testdata\media\control-mpeg4-aac.mp4'
+$beep = Join-Path $PSScriptRoot 'testdata\media\beep-at-40s.ts'
 
 $runs = @(
     @{ Test = 'security'; Video = $sample; Label = 'security' },
     @{ Test = 'preview'; Video = $sample; Label = 'preview_sample' },
+    @{ Test = 'marks'; Video = $beep; Label = 'marks' },
     @{ Test = 'play'; Video = $sample; Label = 'play' }
 )
 if ($LongVideo -ne '') { $runs += @{ Test = 'preview'; Video = $LongVideo; Label = 'preview_long' } }

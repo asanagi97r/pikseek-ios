@@ -4,6 +4,8 @@ import PikSeekKit
 /// 放画面的视图：里面只有一个 Metal 层，跟着视图的大小走。不接触摸，控件都在上面那层 Compose 里。
 final class MpvVideoView: UIView {
     let metalLayer = MpvMetalLayer()
+    /// 画面的像素尺寸变了（分屏、转屏、拖分隔条）。mpv 停着时不会自己重画，要人推一下
+    var onResize: (() -> Void)?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -25,6 +27,14 @@ final class MpvVideoView: UIView {
         CATransaction.setDisableActions(true)
         metalLayer.frame = bounds
         CATransaction.commit()
+        // 子层的 drawableSize 不跟着 frame 变，mpv 按它定输出尺寸：不改的话分屏到半边后画面还按原来的大小画，
+        // 要退出播放再进来才对。宽高为 0（还没排版）时不动，见 MpvMetalLayer
+        let scale = metalLayer.contentsScale
+        let size = CGSize(width: (bounds.width * scale).rounded(), height: (bounds.height * scale).rounded())
+        if size.width > 1 && size.height > 1 && size != metalLayer.drawableSize {
+            metalLayer.drawableSize = size
+            onResize?()
+        }
     }
 }
 
@@ -73,6 +83,13 @@ final class MpvPlayer: NSObject, MpvPlayerBridge {
         ]
         guard let core = MpvCore(layer: view.metalLayer, options: options) else { return nil }
         let player = MpvPlayer(core: core, view: view)
+        view.onResize = { [weak core] in
+            // 播着时下一帧 mpv 自己会发现尺寸变了；停着时没有下一帧，把缩放来回拨一下逼它按新尺寸重画一帧
+            guard let core, core.getProperty("pause") == "yes" else { return }
+            let zoom = core.getProperty("video-zoom") ?? "0"
+            _ = core.setProperty("video-zoom", zoom == "0.000000" || zoom == "0" ? "0.0001" : "0")
+            _ = core.setProperty("video-zoom", zoom)
+        }
         player.watchAppState()
         return player
     }

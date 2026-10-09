@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -64,6 +65,7 @@ import androidx.compose.material.icons.outlined.Subtitles
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -98,6 +100,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -133,7 +136,11 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import dev.pikseek.ui.player.LocalTimelinePreview
+import dev.pikseek.ui.player.MarksMenuItems
+import dev.pikseek.ui.player.marksActions
 import dev.pikseek.ui.player.TimelinePreviewBubble
+import dev.pikseek.ui.rating.RatingButton
+import dev.pikseek.ui.player.PlayOrderButton
 import dev.piko.ui.platform.LocalFramelessWindow
 import dev.piko.ui.components.SheetAction
 import dev.piko.ui.platform.windowDragArea
@@ -222,6 +229,17 @@ fun PlayerTopBar(
                     }
                 }
             }
+        }
+        // PikSeek：收藏按钮，与卡片上的同一个：单击收藏，双击讨厌，再点取消
+        LocalTimelinePreview.current?.ratingFile?.let { file ->
+            RatingButton(
+                file,
+                containerColor = playerContainerColor(),
+                neutralColor = MaterialTheme.colorScheme.onSurface,
+                size = 40.dp,
+                iconSize = 22.dp,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
         }
         fileActions.forEach { action ->
             PlayerIconButton(icon = action.icon, label = action.label, onClick = action.onClick, tooltipBelow = true)
@@ -517,7 +535,7 @@ internal fun PlayerBottomBar(
     bufferedPositionMillis: Long,
     playbackSpeed: Float?,
     showEpisodes: Boolean,
-    /** 上一集、下一集两个快捷键。窄窗口不给，换集走选集面板。 */
+    /** 上一集、下一集两个快捷键。 */
     showEpisodeSkip: Boolean,
     /** 窄窗口：选集只留图标，见下。 */
     compactWidth: Boolean,
@@ -580,6 +598,8 @@ internal fun PlayerBottomBar(
                     text = formatTime(shownPosition),
                     style = TimeTextStyle(),
                     color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    softWrap = false,
                 )
                 Text(
                     text = " / ${formatTime(durationMillis)}",
@@ -606,6 +626,8 @@ internal fun PlayerBottomBar(
                     }
                 }
             }
+            // PikSeek：连播方式（顺序、随机、循环、播完停止），有播放列表时才给
+            if (showEpisodes) PlayOrderButton()
             if (showEpisodes) {
                 // 窄窗口只留图标，名字在提示里：带字的这一格约 80dp，省下的地方让旋转按钮常驻，
                 // 360dp 的手机竖屏里时间、倍速、选集、旋转、全屏才排得下
@@ -747,6 +769,8 @@ internal fun PlayerSeekBar(
 ) {
     var dragFraction by remember { mutableStateOf<Float?>(null) }
     var hoverFraction by remember { mutableStateOf<Float?>(null) }
+    // 右键点在进度条上的位置：在那里弹改分段的菜单
+    var menuFraction by remember { mutableStateOf<Float?>(null) }
     // 松手到新位置回报之间有一段延迟，这段时间里滑块停在目标处，不回跳到旧位置
     var pendingSeekMillis by remember { mutableStateOf<Long?>(null) }
 
@@ -793,6 +817,13 @@ internal fun PlayerSeekBar(
     // 时间轴预览：悬停处的缩略图，以及拖动中主画面跟不跟。播放窗口没提供时为 null，进度条照旧只显示时间
     val timelinePreview = LocalTimelinePreview.current
     val currentPreview by rememberUpdatedState(timelinePreview)
+    // 进度条分段：画刻度、拖动时吸住、悬停气泡里写第几段
+    val marks = timelinePreview?.marks
+    val currentMarks by rememberUpdatedState(marks)
+    val pointFractions = remember(marks, durationMillis) { marks?.snapPoints?.map(::fractionOf).orEmpty() }
+    val spanFractions = remember(marks, durationMillis) {
+        listOfNotNull(marks?.intro, marks?.outro).map { fractionOf(it.startMs)..fractionOf(it.endMs) }
+    }
 
     fun commitSeek(target: Float) {
         val millis = (target * durationMillis).toLong()
@@ -810,6 +841,8 @@ internal fun PlayerSeekBar(
     }
 
     val focusRingColor = scheme.secondary
+    val markColor = scheme.onSurface
+    val spanColor = scheme.tertiary.copy(alpha = SPAN_ALPHA)
 
     BoxWithConstraints(modifier = modifier.height(SeekBarHeight)) {
         Box(
@@ -823,11 +856,19 @@ internal fun PlayerSeekBar(
                 .pointerInput(enabled, durationMillis) {
                     if (!enabled) return@pointerInput
                     val inset = SeekThumbDraggingRadius.toPx()
+                    val snapPx = SeekSnapDistance.toPx()
                     awaitEachGesture {
                         val down = awaitFirstDown()
                         down.consume()
+                        // 右键不拖：菜单由下面那层弹
+                        if (currentEvent.buttons.isSecondaryPressed) return@awaitEachGesture
                         fun follow(x: Float) {
-                            val target = seekFractionAt(x, size.width.toFloat(), inset)
+                            var target = seekFractionAt(x, size.width.toFloat(), inset)
+                            // 经过分点附近时吸住，一松手正好落在分点上
+                            currentMarks?.let { current ->
+                                val tolerance = (snapPx / (size.width - 2 * inset).coerceAtLeast(1f) * durationMillis).toLong()
+                                current.nearestPoint((target * durationMillis).toLong(), tolerance)?.let { target = it.toFloat() / durationMillis }
+                            }
                             dragFraction = target
                             val targetMillis = (target * durationMillis).toLong()
                             currentOnScrub(targetMillis)
@@ -858,6 +899,11 @@ internal fun PlayerSeekBar(
                                 !enabled || change.type != PointerType.Mouse || event.type == PointerEventType.Exit -> null
                                 else -> seekFractionAt(change.position.x, size.width.toFloat(), inset)
                             }
+                            // 右键：在那里弹改分段的菜单（加删分点、定片头片尾）
+                            if (enabled && event.type == PointerEventType.Press && event.buttons.isSecondaryPressed && currentPreview?.marks != null) {
+                                menuFraction = seekFractionAt(change.position.x, size.width.toFloat(), inset)
+                                change.consume()
+                            }
                         }
                     }
                 }
@@ -870,6 +916,10 @@ internal fun PlayerSeekBar(
                         thumbRadius = thumbRadius.toPx(),
                         inset = SeekThumbDraggingRadius.toPx(),
                         focusRing = if (isFocused) focusRingColor else null,
+                        points = pointFractions,
+                        spans = spanFractions,
+                        pointColor = markColor,
+                        spanColor = spanColor,
                     )
                 }
                 // M3 滑块的键盘约定：Tab 停到手柄上，方向键调值。在播放器与信息流里，上级根节点的
@@ -924,6 +974,20 @@ internal fun PlayerSeekBar(
                 },
             )
         }
+
+        // 右键菜单：在点下去的那一处加、删分点，定片头片尾
+        menuFraction?.let { shown ->
+            val density = LocalDensity.current
+            val inset = with(density) { SeekThumbDraggingRadius.toPx() }
+            val anchorPx = inset + shown * (constraints.maxWidth - 2 * inset)
+            val tolerance = with(density) { (SeekSnapDistance.toPx() / (constraints.maxWidth - 2 * inset).coerceAtLeast(1f) * durationMillis).toLong() }
+            val actions = marksActions(timelinePreview, (shown * durationMillis).toLong(), tolerance)
+            Box(Modifier.offset { IntOffset(anchorPx.roundToInt(), 0) }) {
+                DropdownMenu(expanded = actions.isNotEmpty(), onDismissRequest = { menuFraction = null }) {
+                    MarksMenuItems(actions, onDone = { menuFraction = null })
+                }
+            }
+        }
     }
 }
 
@@ -945,6 +1009,10 @@ private fun DrawScope.drawSeekTrack(
     thumbRadius: Float,
     inset: Float,
     focusRing: Color?,
+    points: List<Float> = emptyList(),
+    spans: List<ClosedFloatingPointRange<Float>> = emptyList(),
+    pointColor: Color = Color.White,
+    spanColor: Color = Color.White,
 ) {
     val centerY = size.height / 2
     val start = inset
@@ -959,6 +1027,18 @@ private fun DrawScope.drawSeekTrack(
 
     if (thumbX > start) {
         drawLine(colors.active, Offset(start, centerY), Offset(thumbX, centerY), thickness, StrokeCap.Round)
+    }
+    // 片头片尾：轨道上另一种颜色的一截。分点：一道竖着的细刻度，比轨道高出一点
+    for (span in spans) {
+        drawLine(spanColor, Offset(start + (end - start) * span.start, centerY), Offset(start + (end - start) * span.endInclusive, centerY), thickness)
+    }
+    if (points.isNotEmpty()) {
+        val half = thickness / 2 + SeekMarkOverhang.toPx()
+        val width = SeekMarkWidth.toPx()
+        for (point in points) {
+            val x = start + (end - start) * point
+            drawLine(pointColor, Offset(x, centerY - half), Offset(x, centerY + half), width)
+        }
     }
     if (thumbRadius > 0f) drawCircle(colors.active, thumbRadius, Offset(thumbX, centerY))
     // 键盘焦点照 M3 画在手柄外面一圈，隔开一道缝，不与手柄连成一块
@@ -1055,6 +1135,12 @@ private val SeekTrackEngagedThickness = 8.dp
 private val SeekThumbRadius = 6.dp
 private val SeekThumbDraggingRadius = 9.dp
 private const val INACTIVE_TRACK_ALPHA = 0.28f
+
+// 进度条分段：拖动时离分点这么近就吸过去；刻度的粗细、比轨道上下各高出多少；片头片尾那一截的不透明度
+private val SeekSnapDistance = 8.dp
+private val SeekMarkWidth = 2.dp
+private val SeekMarkOverhang = 3.dp
+private const val SPAN_ALPHA = 0.85f
 private const val BUFFERED_TRACK_ALPHA = 0.55f
 
 private const val CONTAINER_ALPHA = 0.72f

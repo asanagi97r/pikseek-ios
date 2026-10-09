@@ -240,9 +240,40 @@ class DriveScreenState(
 
     private fun isHiddenByThumbnails(file: FileStat) = thumbnailsOnly && !file.isFolder && file.thumbnailLink.isEmpty()
 
+    /**
+     * PikSeek：按收藏、讨厌筛选，null 为不筛。与 [thumbnailsOnly] 一样放在这一层：筛出「讨厌」后全选、删除只动看得见的。
+     * 文件夹只在筛收藏时留下加了星标的，其余筛选里都不出现，免得「全选删除」把文件夹连同里面的东西一起删掉。
+     */
+    var ratingFilter by mutableStateOf<FileRating?>(null)
+        private set
+
+    /** 一个条目的态度，由 PikSeek 的界面接上（讨厌名单在那边）；没接时只认星标。读的状态都是快照状态，筛选跟着变。 */
+    var ratingOf: (FileStat) -> FileRating by mutableStateOf({ file -> if (file.isStarred) FileRating.LIKED else FileRating.NONE })
+
+    fun updateRatingFilter(value: FileRating?) {
+        if (value == ratingFilter) return
+        ratingFilter = value
+        // 选中项可能已被筛掉，留着会让删除动到看不见的文件
+        if (isSelectionMode) exitSelection()
+    }
+
+    private fun isHiddenByRating(file: FileStat): Boolean {
+        val filter = ratingFilter ?: return false
+        if (file.isFolder) return filter != FileRating.LIKED || ratingOf(file) != FileRating.LIKED
+        return ratingOf(file) != filter
+    }
+
+    private fun isHidden(file: FileStat) = isHiddenByThumbnails(file) || isHiddenByRating(file)
+
+    /** 眼前这份列表里收藏、讨厌、未标记的文件各有几个（不算文件夹），筛选按钮上写着。 */
+    val ratingCounts: Map<FileRating, Int> by derivedStateOf {
+        val rate = ratingOf
+        searchedFiles.filterNot { it.isFolder }.groupingBy { rate(it) }.eachCount()
+    }
+
     /** 列表项：作品头、分区标题与文件。搜索、筛选与解析关闭时照原样平铺，认不出任何作品时也平铺。 */
     val displayItems: List<DriveListItem> by derivedStateOf {
-        if (thumbnailsOnly) hideFiles(unfilteredItems, ::isHiddenByThumbnails) else unfilteredItems
+        if (thumbnailsOnly || ratingFilter != null) hideFiles(unfilteredItems, ::isHidden) else unfilteredItems
     }
 
     private val unfilteredItems: List<DriveListItem> by derivedStateOf {
@@ -270,10 +301,11 @@ class DriveScreenState(
             return@derivedStateOf displayItems.mapNotNull { (it as? DriveListItem.File)?.file }
         }
         val hideFolded = isFoldingActive && !showAllFilesTemporarily
-        val shown = buildDriveItems(files, structure, hideFolded) { true }.mapNotNull { (it as? DriveListItem.File)?.file }
+        val shown = buildDriveItems(files, structure, hideFolded) { true }.mapNotNull { (it as? DriveListItem.File)?.file }.filterNot(::isHidden)
         val shownIds = shown.mapTo(HashSet()) { it.id }
+        // 附件（外挂字幕、音轨）跟着宿主走，不看自己的收藏讨厌：删讨厌的视频时它的字幕一起删
         val attachments = files.filter { file -> structure.attachedTo[file.id]?.let { it in shownIds } == true }
-        (shown + attachments).filterNot(::isHiddenByThumbnails)
+        shown + attachments.filterNot(::isHiddenByThumbnails)
     }
 
     /** 列表项里的分区标题及其下标。顶栏副标题按首个可见项反查，分区菜单据此跳转。 */
@@ -718,6 +750,7 @@ class DriveScreenState(
     /** 换了目录：搜索态、选中态、防窥揭示都不该跨目录留存。 */
     private fun onFolderChanged() {
         typeFilter = null
+        ratingFilter = null
         searchQuery = ""
         stopGlobalSearch()
         exitSelection()

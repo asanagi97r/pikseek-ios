@@ -4,6 +4,8 @@ import dev.piko.shared.media.PlayableMediaInfo
 import dev.piko.ui.PikoServices
 import dev.pikseek.platform.AppPaths
 import dev.pikseek.platform.AppSettings
+import dev.pikseek.thumbnail.MediaMarks
+import dev.pikseek.thumbnail.MpvAudioDecoder
 import dev.pikseek.thumbnail.MpvFrameGrabber
 import dev.pikseek.thumbnail.ThumbnailEngine
 import dev.pikseek.ui.PikSeekEnvironment
@@ -30,9 +32,13 @@ class PikSeekRuntime(val settings: AppSettings, services: PikoServices) {
         tempDirectory = AppPaths.temp.resolve("thumbs").toString(),
         newGrabber = { mpvDirectory?.let(::MpvFrameGrabber) },
         fileLength = { File(it).length() },
+        newAudioDecoder = { mpvDirectory?.let { MpvAudioDecoder(it, AppPaths.temp.resolve("audio")) } },
     )
 
     val environment: PikSeekEnvironment get() = runtime.environment
+
+    /** 见 [PreviewRuntime.ratings]。 */
+    val ratings get() = runtime.ratings
 
     val canGenerate: Boolean get() = mpvDirectory != null
 
@@ -49,4 +55,18 @@ class PikSeekRuntime(val settings: AppSettings, services: PikoServices) {
         if (mpvDirectory == null) return null
         return runtime.openSession(fileId, info, localPath, durationMs, position, busy, parallelism)
     }
+
+    /** 见 [PreviewRuntime.followMarks]。 */
+    suspend fun followMarks(
+        fileId: String,
+        info: PlayableMediaInfo?,
+        localPath: String?,
+        durationMs: Long,
+        session: ThumbnailEngine.Session,
+        busy: StateFlow<Boolean>,
+        onMarks: (MediaMarks) -> Unit,
+    ) = runtime.followMarks(fileId, info, localPath, durationMs, session, busy, onMarks)
+
+    /** 见 [PreviewRuntime.saveMarks]。 */
+    fun saveMarks(marks: MediaMarks) = runtime.saveMarks(marks)
 }

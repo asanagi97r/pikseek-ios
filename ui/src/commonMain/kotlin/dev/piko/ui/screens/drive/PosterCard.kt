@@ -1,6 +1,12 @@
 package dev.piko.ui.screens.drive
 
 import dev.pikseek.ui.preview.PreviewCacheBadge
+import dev.piko.shared.state.FileRating
+import dev.pikseek.ui.rating.LocalFileRatings
+import dev.pikseek.ui.rating.RatingButton
+import dev.pikseek.ui.rating.ratingButtonPinned
+import dev.pikseek.ui.rating.ratingButtonShown
+import dev.pikseek.ui.rating.ratingOf
 import dev.piko.ui.components.itemMarks
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -196,6 +202,8 @@ internal fun PosterCard(
             // PikSeek：预览缓存做到哪了。右上角是标签，放左上
             PreviewCacheBadge(file, Modifier.align(Alignment.TopStart).padding(6.dp))
             val cornerTags = tags.filter { it != resolution }.take(COVER_CORNER_TAGS)
+            // PikSeek：右上角的收藏按钮。一直在的（标过的、触屏上）给标签让出位置；悬停才出来的浮在标签上，标签不跟着跳
+            val ratingPinned = ratingButtonPinned(file, isSelectionMode)
             if (cornerTags.isNotEmpty()) {
                 // 放不下的整个丢掉，不截半个标签
                 MediaTagRow(
@@ -204,9 +212,13 @@ internal fun PosterCard(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(6.dp)
+                        .padding(end = if (ratingPinned) RatingCornerReserve else 0.dp)
                         .fillMaxWidth()
                         .wrapContentSize(Alignment.TopEnd),
                 )
+            }
+            if (ratingButtonShown(file, hovered, isSelectionMode)) {
+                RatingButton(file, Modifier.align(Alignment.TopEnd).padding(5.dp))
             }
             if (code != null || resolution != null) {
                 // 左右两角放在同一行：窄卡片上长番号会碰到清晰度，同一行里番号先让出位置
@@ -235,7 +247,7 @@ internal fun PosterCard(
                 verticalAlignment = Alignment.Top,
             ) {
                 // 星标与归档标记放在标题前而不上封面，封面的角已经给了标签与番号；对齐首行（bodyMedium 行高 20，图标 16）
-                itemMarks(file, folderHasVault)?.let { marks ->
+                itemMarks(file, folderHasVault, rating = if (LocalFileRatings.current != null) FileRating.NONE else ratingOf(file))?.let { marks ->
                     Box(Modifier.padding(top = 2.dp, end = 4.dp)) { marks() }
                 }
                 Text(
@@ -454,6 +466,9 @@ private fun TypePlaceholder(file: FileStat, modifier: Modifier = Modifier) {
 private const val COVER_ASPECT = 16f / 9f
 private const val TITLE_LINES = 2
 private const val COVER_CORNER_TAGS = 2
+
+// PikSeek：一直在的收藏按钮（28dp 加 5dp 边距）占去的宽度，标签从它左边开始排
+private val RatingCornerReserve = 29.dp
 private const val PLACEHOLDER_ICON_ALPHA = 0.6f
 private val FOLDER_TAB_HEIGHT = 8.dp
 

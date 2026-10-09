@@ -228,6 +228,9 @@ class ThumbnailEngine(val cache: ThumbnailCache) {
         fun frameAt(timeMs: Long): ThumbnailFrame? =
             frames.nearest(timeMs)?.takeIf { abs(it.timeMs - timeMs) <= maxDistanceMs }
 
+        /** 眼下已有的全部帧，按时刻排好。场景分点拿它粗分。 */
+        fun frames(): List<ThumbnailFrame> = frames.snapshot().values.distinctBy { it.timeMs }.sortedBy { it.timeMs }
+
         /** 用户在 [timeMs] 附近悬停或拖动，而那里还没有图：把那几格提到最前。已有图时不动。 */
         fun prefer(timeMs: Long) {
             val wanted = plan.around(timeMs).filter { !frames.has(it) }

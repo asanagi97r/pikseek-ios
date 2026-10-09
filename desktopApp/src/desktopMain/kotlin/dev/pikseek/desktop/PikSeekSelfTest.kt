@@ -10,7 +10,13 @@ import dev.pikseek.security.NetworkAudit
 import dev.pikseek.security.PlaintextCredentialScan
 import dev.pikseek.security.SecurityReport
 import dev.pikseek.security.TelemetryCheck
+import dev.pikseek.thumbnail.ByteRangeReader
+import dev.pikseek.thumbnail.EpisodeSound
 import dev.pikseek.thumbnail.MediaFingerprint
+import dev.pikseek.thumbnail.MediaMarks
+import dev.pikseek.thumbnail.MpvAudioDecoder
+import dev.pikseek.thumbnail.SceneAnalysis
+import dev.pikseek.thumbnail.ThumbnailFrame
 import dev.pikseek.thumbnail.MpvFrameGrabber
 import dev.pikseek.thumbnail.PreviewDensity
 import dev.pikseek.thumbnail.SeekingSource
@@ -155,6 +161,63 @@ internal object PikSeekSelfTest {
                 files.any { it.startsWith("sheet-000.webp") } && reloaded.fromCache == reloaded.fullTotal
         } finally {
             cacheRoot.toFile().deleteRecursively()
+        }
+    }
+
+    /**
+     * 进度条分段：用包里的 libmpv 从 [ts]（一段 TS，40～42 秒有一声「嘀」，其余静音）按字节取 30～50 秒的声音，
+     * 看嘀声落在不在 40～42 秒；再拿合成的两种画面跑一次场景分点，看切点对不对；分段文件读写一遍。
+     */
+    fun marks(ts: File, report: (String) -> Unit): Boolean = runBlocking {
+        if (!ts.isFile) {
+            report("no such file: $ts")
+            return@runBlocking false
+        }
+        val mpvDirectory = System.getProperty("compose.application.resources.dir")?.let { File(it, "mpv").toPath() }
+        if (mpvDirectory == null || !Files.isRegularFile(mpvDirectory.resolve("libmpv-2.dll"))) {
+            report("bundled libmpv not found under $mpvDirectory")
+            return@runBlocking false
+        }
+        val temp = AppPaths.dir("selftest-marks")
+        try {
+            val bytes = ts.readBytes()
+            val reader = object : ByteRangeReader {
+                override val size: Long get() = bytes.size.toLong()
+
+                override suspend fun read(offset: Long, length: Int): ByteArray =
+                    bytes.copyOfRange(offset.toInt(), minOf(bytes.size, offset.toInt() + length))
+            }
+            val sound = EpisodeSound(MpvAudioDecoder(mpvDirectory, temp.resolve("audio")), temp.resolve("ts").toString())
+            val started = System.nanoTime()
+            val print = sound.fromTs(reader, 60_000, 30_000, 20_000)
+            val loud = print?.let { p -> p.loud.indices.filter { p.loud[it] }.map(p::timeOf) }.orEmpty()
+            val beep = loud.firstOrNull() to loud.lastOrNull()
+            report("audio.sliceStartMs=${print?.startMs} beep=${beep.first}..${beep.second} read=${sound.networkBytes}/${bytes.size} in ${(System.nanoTime() - started) / 1_000_000} ms")
+            val audioOk = print != null && beep.first != null && kotlin.math.abs(beep.first!! - 40_000) <= 500 && kotlin.math.abs(beep.second!! - 42_000) <= 500
+
+            // 前 40 分钟蓝、后 20 分钟红（各带点随机块），切点该在 40 分钟之后的第一张图上
+            fun frame(time: Long): ThumbnailFrame {
+                val random = java.util.Random(time)
+                val base = if (time < 2_400_000) 0xFF2A6F97.toInt() else 0xFFB03030.toInt()
+                val pixels = IntArray(240 * 136) { base }
+                repeat(4) {
+                    val x0 = random.nextInt(140)
+                    val y0 = random.nextInt(60)
+                    for (y in y0 until y0 + 60) for (x in x0 until x0 + 90) pixels[y * 240 + x] = 0xFFE0C9A6.toInt()
+                }
+                return ThumbnailFrame(time, 240, 136, pixels)
+            }
+            val frames = (0 until 90).map { frame((it + 0.5).times(40_000).toLong()) }
+            val cuts = SceneAnalysis.analyze(frames, 3_600_000, fetch = { time -> frame(time / 5_000 * 5_000) })
+            report("scenes.cuts=$cuts")
+            val scenesOk = cuts.size == 1 && cuts.single() in 2_400_000..2_406_000
+
+            val marks = MediaMarks(gcid = "AB".repeat(20), durationMs = 3_600_000, scenes = cuts, scenesDone = true).withIntroEnd(90_000)
+            val roundTrip = MediaMarks.decode(marks.encode()) == marks
+            report("marks.roundTrip=$roundTrip file=${marks.fileName}")
+            audioOk && scenesOk && roundTrip
+        } finally {
+            temp.toFile().deleteRecursively()
         }
     }
 }

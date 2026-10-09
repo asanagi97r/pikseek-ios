@@ -1,5 +1,6 @@
 package dev.pikseek.ui.player
 
+import io.github.nihildigit.pikpak.FileStat
 import dev.piko.ui.platform.monotonicMillis
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -31,13 +32,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.pikseek.platform.DragSeekMode
 import dev.pikseek.player.DragSeekPolicy
+import dev.pikseek.thumbnail.MediaMarks
 import dev.pikseek.thumbnail.ThumbnailEngine
 import dev.pikseek.thumbnail.ThumbnailFrame
 import dev.pikseek.thumbnail.ThumbnailProgress
 import dev.pikseek.thumbnail.ThumbnailState
 
 /**
- * 进度条悬停与拖动时要的东西：某个时刻的预览图，以及拖动中要不要让主画面跟着走。
+ * 进度条悬停与拖动时要的东西：某个时刻的预览图、进度条上的分段（[marks]），以及拖动中要不要让主画面跟着走。
  * 播放窗口提供它，进度条经 [LocalTimelinePreview] 取用；没有提供时进度条照旧只显示时间。
  */
 class TimelinePreview(
@@ -49,6 +51,38 @@ class TimelinePreview(
 
     /** 引擎的进度，界面读它来刷新悬停处的图与「生成中」的提示。 */
     var progress by mutableStateOf<ThumbnailProgress?>(null)
+
+    /** 这个视频的进度条分段：场景分点、片头片尾。还没读到时为 null，进度条不画刻度、也不给改。 */
+    var marks by mutableStateOf<MediaMarks?>(null)
+
+    /** 用户改了分段之后怎么存。为 null 时改动只留在这一次播放里。 */
+    var saveMarks: ((MediaMarks) -> Unit)? = null
+
+    /** 进到片头、片尾时自动跳过（设置里开的）。 */
+    var autoSkip: () -> Boolean = { false }
+
+    /** 正在播的这个网盘文件，顶栏的收藏按钮作用于它。本机文件、还没对上号时为 null，不给按钮。换集时不清（[reset] 不动它）。 */
+    var ratingFile by mutableStateOf<FileStat?>(null)
+
+    /** 在眼下的分段上做 [change]，界面立刻换上，再交去存。还没有分段时不做。 */
+    fun editMarks(change: (MediaMarks) -> MediaMarks) {
+        val current = marks ?: return
+        val next = change(current)
+        if (next == current) return
+        marks = next
+        saveMarks?.invoke(next)
+    }
+
+    /** [timeMs] 处的分段说明：「片头」「片尾」「第 3 段 · 共 7 段」。没有分段、只有一段时为 null。 */
+    fun labelAt(timeMs: Long): String? {
+        val current = marks ?: return null
+        return when {
+            current.intro?.contains(timeMs) == true -> "片头"
+            current.outro?.contains(timeMs) == true -> "片尾"
+            current.segmentCount > 1 -> "第 ${current.segmentAt(timeMs) + 1} 段 · 共 ${current.segmentCount} 段"
+            else -> null
+        }
+    }
 
     // 帧转成位图要拷一次像素，悬停时来回扫会反复用到同几张，留一小批
     // 按最近用到的先后排着：用到的挪到末尾，满了从头上丢
@@ -86,6 +120,8 @@ class TimelinePreview(
         bitmaps.clear()
         session = null
         progress = null
+        marks = null
+        saveMarks = null
     }
 
     private companion object {
@@ -140,6 +176,9 @@ fun TimelinePreviewBubble(
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
             )
+            preview?.labelAt(timeMs)?.let { label ->
+                Text(label, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 3.dp))
+            }
             if (image == null) previewHint(preview?.progress)?.let { hint ->
                 Text(hint, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 3.dp))
             }

@@ -76,7 +76,8 @@ data class PreviewPackName(
         /** 不是这种名字时为 null。不用正则：各平台的正则引擎认的写法不一样，这里拆字符串就够了。 */
         fun parse(fileName: String): PreviewPackName? {
             if (!fileName.endsWith(EXTENSION)) return null
-            val parts = fileName.removeSuffix(EXTENSION).split('_')
+            // 网盘给重名的上传另起的名字带「(1)」这样的序号：照样认
+            val parts = withoutCopyNumber(fileName.removeSuffix(EXTENSION)).split('_')
             if (parts.size != 3) return null
             val (gcid, letter, progress) = parts
             if (gcid.length != 40 || !gcid.all { it in '0'..'9' || it in 'A'..'F' || it in 'a'..'f' }) return null
@@ -88,6 +89,15 @@ data class PreviewPackName(
             return PreviewPackName(gcid.uppercase(), density, done.coerceAtMost(total), total)
         }
     }
+}
+
+/** 去掉末尾「(数字)」样的序号：网盘给重名的上传另起名字时加的。 */
+internal fun withoutCopyNumber(stem: String): String {
+    if (!stem.endsWith(')')) return stem
+    val open = stem.lastIndexOf('(')
+    if (open < 0 || open == stem.length - 2) return stem
+    val digits = stem.substring(open + 1, stem.length - 1)
+    return if (digits.all { it in '0'..'9' }) stem.substring(0, open).trimEnd() else stem
 }
 
 /** 档次在文件名里的写法。 */

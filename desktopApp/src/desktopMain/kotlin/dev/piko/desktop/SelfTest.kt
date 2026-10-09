@@ -16,7 +16,7 @@ import kotlinx.coroutines.runBlocking
  * `JAVA_TOOL_OPTIONS` 传），结果逐行追加到 `-Dpikseek.selftest.out` 指的文件（启动器是窗口程序，
  * 标准输出接不出来），退出码 0 为通过。在单实例锁之前处理：开着的 PikSeek 不会把它当成后来者转交走。
  *
- * PikSeek 自己加的两项：`security`（认证存储、白名单、遥测检查）与 `preview`（时间轴缩略图），见 PikSeekSelfTest。
+ * PikSeek 自己加的三项：`security`（认证存储、白名单、遥测检查）、`preview`（时间轴缩略图）与 `marks`（进度条分段：解声音、场景分点），见 PikSeekSelfTest。
  */
 internal const val SELF_TEST_PROPERTY = "pikseek.selftest"
 private const val SELF_TEST_OUT_PROPERTY = "pikseek.selftest.out"
@@ -88,6 +88,7 @@ internal fun runSelfTest(name: String): Int {
             }
             "security" -> dev.pikseek.desktop.PikSeekSelfTest.security(::report)
             "preview" -> dev.pikseek.desktop.PikSeekSelfTest.preview(File(System.getenv(SELF_TEST_PATH_ENV).orEmpty()), ::report)
+            "marks" -> dev.pikseek.desktop.PikSeekSelfTest.marks(File(System.getenv(SELF_TEST_PATH_ENV).orEmpty()), ::report)
             else -> {
                 report("unknown self test: $name")
                 false

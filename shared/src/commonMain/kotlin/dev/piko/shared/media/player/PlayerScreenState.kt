@@ -16,6 +16,7 @@ import dev.piko.shared.media.PreparedPlayback
 import dev.piko.shared.media.bestTranscodeName
 import dev.piko.shared.media.proxy.ProxyStream
 import dev.pikseek.performance.PerformanceMetrics
+import dev.pikseek.platform.PlayOrder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -192,9 +193,37 @@ class PlayerScreenState(
         val key = currentEntry?.sectionKey ?: return@derivedStateOf emptyList()
         playlist.filter { it.sectionKey == key }.groupBy { it.groupKey }.values.toList()
     }
-    private val groupIndex by derivedStateOf { sectionGroups.indexOfFirst { group -> group.any { it.fileId == fileId } } }
-    val previousEntry by derivedStateOf { sectionGroups.getOrNull(groupIndex - 1)?.takeIf { groupIndex > 0 }?.let(::preferredIn) }
-    val nextEntry by derivedStateOf { sectionGroups.getOrNull(groupIndex + 1)?.takeIf { groupIndex >= 0 }?.let(::preferredIn) }
+
+    /** PikSeek：一集放完自动接着放；关了就停在片尾。由播放窗口按设置接上。 */
+    var continuousPlay by mutableStateOf(true)
+
+    /** PikSeek：往哪走，见 [PlayOrder]。上一集、下一集按钮也照它走。 */
+    var playOrder by mutableStateOf(PlayOrder.Sequential)
+
+    // 随机播放的次序：各组的 groupKey，打乱一次之后一直沿用，上一集才退得回刚才那集。分区换了、组变了才重新打乱
+    private var shuffleKeys by mutableStateOf<List<String>>(emptyList())
+
+    /** 按 [playOrder] 排好的组：随机时是打乱过的次序（当前这集排第一），其余照目录顺序。 */
+    private val orderedGroups by derivedStateOf {
+        if (playOrder != PlayOrder.Shuffle) return@derivedStateOf sectionGroups
+        val byKey = sectionGroups.associateBy { it.first().groupKey }
+        val ordered = shuffleKeys.mapNotNull { byKey[it] }
+        if (ordered.size == sectionGroups.size) ordered else sectionGroups
+    }
+    private val groupIndex by derivedStateOf { orderedGroups.indexOfFirst { group -> group.any { it.fileId == fileId } } }
+
+    /** 往前或往后第 [step] 组。列表循环与随机时首尾相接，其余走到头为 null。 */
+    private fun groupAt(step: Int): List<PlaylistEntry>? {
+        val groups = orderedGroups
+        if (groupIndex < 0) return null
+        val target = groupIndex + step
+        if (target in groups.indices) return groups[target]
+        val wraps = (playOrder == PlayOrder.LoopList || playOrder == PlayOrder.Shuffle) && groups.size > 1
+        return if (wraps) groups[target.mod(groups.size)].takeIf { it !== groups[groupIndex] } else null
+    }
+
+    val previousEntry by derivedStateOf { groupAt(-1)?.let(::preferredIn) }
+    val nextEntry by derivedStateOf { groupAt(1)?.let(::preferredIn) }
 
     private fun preferredIn(group: List<PlaylistEntry>): PlaylistEntry = preferredVersion(group, currentEntry?.versionLabel)
 
@@ -230,6 +259,14 @@ class PlayerScreenState(
 
     init {
         scope.launch { backend.events.collect(::onBackendEvent) }
+        // 随机播放：选上随机、或分区里的组变了时打乱一次，当前这集排第一
+        scope.launch {
+            snapshotFlow { playOrder to sectionGroups.map { it.first().groupKey } }.collect { (order, keys) ->
+                if (order != PlayOrder.Shuffle || keys.toSet() == shuffleKeys.toSet()) return@collect
+                val current = sectionGroups.firstOrNull { group -> group.any { it.fileId == fileId } }?.first()?.groupKey
+                shuffleKeys = listOfNotNull(current) + (keys - setOfNotNull(current)).shuffled()
+            }
+        }
         scope.launch {
             snapshotFlow { backend.positionMillis }.collect { position ->
                 // 新文件出第一帧前，后端报的可能还是上一个文件的位置
@@ -614,7 +651,16 @@ class PlayerScreenState(
                 val key = positionKey
                 scope.launch { runCatchingNonCancel { repository.savePlaybackPosition(key, 0L) } }
                 // 放完接着放下一集。switchTo 会按片尾位置再存一次，而片尾位置存的也是 0
-                nextEntry?.let(::playEntry)
+                // PikSeek：连续播放关着时停在片尾；单集循环时从头重开这一集
+                when {
+                    !continuousPlay -> Unit
+                    playOrder == PlayOrder.RepeatOne -> {
+                        pendingStartMillis = 0L
+                        resetRecovery()
+                        reload()
+                    }
+                    else -> nextEntry?.let(::playEntry)
+                }
             }
 
             is PlaybackBackendEvent.Error -> onPlaybackError(event.detail)
@@ -630,7 +676,7 @@ class PlayerScreenState(
         if (!prefetchNext || isLocalPlayback) return
         prefetchJob = scope.launch {
             delay(NEXT_PREFETCH_DELAY_MILLIS)
-            val upcoming = listOfNotNull(nextEntry, sectionGroups.getOrNull(groupIndex + 2)?.takeIf { groupIndex >= 0 }?.let(::preferredIn))
+            val upcoming = listOfNotNull(nextEntry, groupAt(2)?.let(::preferredIn)).distinct()
             var ready = false
             for (entry in upcoming) {
                 val fetched = runCatching { repository.prefetchDescriptor(entry.fileId) }.getOrDefault(false)
