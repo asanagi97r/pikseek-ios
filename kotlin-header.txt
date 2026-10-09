@@ -1,0 +1,104 @@
+1:11:@protocol PSKFrameGrabberBridge, PSKHttpBridge, PSKKeychainBridge, PSKMpvEvents, PSKMpvPlayerBridge, PSKNativeServices;
+2-26:@interface PSKBase : NSObject
+3-27:- (instancetype)init __attribute__((unavailable));
+4-28:+ (instancetype)new __attribute__((unavailable));
+5-29:+ (void)initialize __attribute__((objc_requires_super));
+6-32:@interface PSKBase (PSKBaseCopying) <NSCopying>
+7-36:@interface PSKMutableSet<ObjectType> : NSMutableSet<ObjectType>
+8-40:@interface PSKMutableDictionary<KeyType, ObjectType> : NSMutableDictionary<KeyType, ObjectType>
+9-43:@interface NSError (NSErrorPSKKotlinException)
+10-44:@property (readonly) id _Nullable kotlinException;
+11-48:@interface PSKNumber : NSNumber
+12-49:- (instancetype)initWithChar:(char)value __attribute__((unavailable));
+13-50:- (instancetype)initWithUnsignedChar:(unsigned char)value __attribute__((unavailable));
+14-51:- (instancetype)initWithShort:(short)value __attribute__((unavailable));
+15-52:- (instancetype)initWithUnsignedShort:(unsigned short)value __attribute__((unavailable));
+16-53:- (instancetype)initWithInt:(int)value __attribute__((unavailable));
+17-54:- (instancetype)initWithUnsignedInt:(unsigned int)value __attribute__((unavailable));
+18-55:- (instancetype)initWithLong:(long)value __attribute__((unavailable));
+19-56:- (instancetype)initWithUnsignedLong:(unsigned long)value __attribute__((unavailable));
+20-57:- (instancetype)initWithLongLong:(long long)value __attribute__((unavailable));
+21-58:- (instancetype)initWithUnsignedLongLong:(unsigned long long)value __attribute__((unavailable));
+22-59:- (instancetype)initWithFloat:(float)value __attribute__((unavailable));
+23-60:- (instancetype)initWithDouble:(double)value __attribute__((unavailable));
+24-61:- (instancetype)initWithBool:(BOOL)value __attribute__((unavailable));
+25-62:- (instancetype)initWithInteger:(NSInteger)value __attribute__((unavailable));
+26-63:- (instancetype)initWithUnsignedInteger:(NSUInteger)value __attribute__((unavailable));
+27-64:+ (instancetype)numberWithChar:(char)value __attribute__((unavailable));
+28-65:+ (instancetype)numberWithUnsignedChar:(unsigned char)value __attribute__((unavailable));
+29-66:+ (instancetype)numberWithShort:(short)value __attribute__((unavailable));
+30-67:+ (instancetype)numberWithUnsignedShort:(unsigned short)value __attribute__((unavailable));
+31-68:+ (instancetype)numberWithInt:(int)value __attribute__((unavailable));
+32-69:+ (instancetype)numberWithUnsignedInt:(unsigned int)value __attribute__((unavailable));
+33-70:+ (instancetype)numberWithLong:(long)value __attribute__((unavailable));
+34-71:+ (instancetype)numberWithUnsignedLong:(unsigned long)value __attribute__((unavailable));
+35-72:+ (instancetype)numberWithLongLong:(long long)value __attribute__((unavailable));
+36-73:+ (instancetype)numberWithUnsignedLongLong:(unsigned long long)value __attribute__((unavailable));
+37-74:+ (instancetype)numberWithFloat:(float)value __attribute__((unavailable));
+38-75:+ (instancetype)numberWithDouble:(double)value __attribute__((unavailable));
+39-76:+ (instancetype)numberWithBool:(BOOL)value __attribute__((unavailable));
+40-77:+ (instancetype)numberWithInteger:(NSInteger)value __attribute__((unavailable));
+41-78:+ (instancetype)numberWithUnsignedInteger:(NSUInteger)value __attribute__((unavailable));
+--
+75:150:@protocol PSKFrameGrabberBridge
+76-152:- (void)close __attribute__((swift_name("close()")));
+77-153:- (int64_t)durationMs __attribute__((swift_name("durationMs()")));
+78:154:- (PSKGrabbedFrame * _Nullable)grab __attribute__((swift_name("grab()")));
+79-157:- (BOOL)openLocation:(NSString *)location timeoutMs:(int64_t)timeoutMs startSeconds:(double)startSeconds __attribute__((swift_name("open(location:timeoutMs:startSeconds:)")));
+80:160:- (PSKGrabbedFrame * _Nullable)seekAndGrabSeconds:(double)seconds timeoutMs:(int64_t)timeoutMs __attribute__((swift_name("seekAndGrab(seconds:timeoutMs:)")));
+81:167:@interface PSKGrabbedFrame : PSKBase
+82-168:- (instancetype)initWithTimeMs:(int64_t)timeMs width:(int32_t)width height:(int32_t)height stride:(int32_t)stride data:(NSData *)data rotate:(int32_t)rotate displayWidth:(int32_t)displayWidth displayHeight:(int32_t)displayHeight __attribute__((swift_name("init(timeMs:width:height:stride:data:
+83-169:@property (readonly) NSData *data __attribute__((swift_name("data")));
+84-170:@property (readonly) int32_t displayHeight __attribute__((swift_name("displayHeight")));
+85-171:@property (readonly) int32_t displayWidth __attribute__((swift_name("displayWidth")));
+86-172:@property (readonly) int32_t height __attribute__((swift_name("height")));
+87-175:@property (readonly) int32_t rotate __attribute__((swift_name("rotate")));
+88-176:@property (readonly) int32_t stride __attribute__((swift_name("stride")));
+89-177:@property (readonly) int64_t timeMs __attribute__((swift_name("timeMs")));
+90-178:@property (readonly) int32_t width __attribute__((swift_name("width")));
+91:182:@protocol PSKHttpBridge
+92:186:- (PSKHttpResult *)postUrl:(NSString *)url headers:(NSDictionary<NSString *, NSString *> *)headers body:(NSData *)body __attribute__((swift_name("post(url:headers:body:)")));
+93:193:@interface PSKHttpResult : PSKBase
+94-194:- (instancetype)initWithStatus:(int32_t)status body:(NSString *)body failure:(NSString * _Nullable)failure connectFailure:(BOOL)connectFailure __attribute__((swift_name("init(status:body:failure:connectFailure:)"))) __attribute__((objc_designated_initializer));
+95-195:@property (readonly) NSString *body __attribute__((swift_name("body")));
+96-198:@property (readonly) BOOL connectFailure __attribute__((swift_name("connectFailure")));
+97-199:@property (readonly) NSString * _Nullable failure __attribute__((swift_name("failure")));
+98-200:@property (readonly) int32_t status __attribute__((swift_name("status")));
+99:204:@protocol PSKKeychainBridge
+100-206:- (void)deleteName:(NSString *)name __attribute__((swift_name("delete(name:)")));
+101-207:- (NSArray<NSString *> *)names __attribute__((swift_name("names()")));
+102:208:- (PSKKeychainItem *)readName:(NSString *)name __attribute__((swift_name("read(name:)")));
+103-211:- (int32_t)writeName:(NSString *)name data:(NSData *)data __attribute__((swift_name("write(name:data:)")));
+104:218:@interface PSKKeychainItem : PSKBase
+105-219:- (instancetype)initWithData:(NSData * _Nullable)data status:(int32_t)status __attribute__((swift_name("init(data:status:)"))) __attribute__((objc_designated_initializer));
+106-220:@property (readonly) NSData * _Nullable data __attribute__((swift_name("data")));
+107-221:@property (readonly) int32_t status __attribute__((swift_name("status")));
+108:227:@protocol PSKMpvEvents
+109-229:- (void)onEventEvent:(NSString *)event detail:(NSString * _Nullable)detail __attribute__((swift_name("onEvent(event:detail:)")));
+110-230:- (void)onPropertyChangedName:(NSString *)name value:(NSString * _Nullable)value __attribute__((swift_name("onPropertyChanged(name:value:)")));
+111:236:@protocol PSKMpvPlayerBridge
+112-238:- (void)close __attribute__((swift_name("close()")));
+113-239:- (BOOL)commandArguments:(NSArray<NSString *> *)arguments __attribute__((swift_name("command(arguments:)")));
+114-240:- (NSString * _Nullable)getPropertyName:(NSString *)name __attribute__((swift_name("getProperty(name:)")));
+115-241:- (void)observeName:(NSString *)name __attribute__((swift_name("observe(name:)")));
+116:242:- (void)setEventsEvents:(id<PSKMpvEvents> _Nullable)events __attribute__((swift_name("setEvents(events:)")));
+117-243:- (BOOL)setPropertyName:(NSString *)name value:(NSString *)value __attribute__((swift_name("setProperty(name:value:)")));
+118-246:- (UIView *)view __attribute__((swift_name("view()")));
+119:252:@protocol PSKNativeServices
+120-256:- (NSString *)appVersion __attribute__((swift_name("appVersion()")));
+121:259:- (id<PSKFrameGrabberBridge> _Nullable)createFrameGrabberFrameWidth:(int32_t)frameWidth __attribute__((swift_name("createFrameGrabber(frameWidth:)")));
+122:262:- (id<PSKMpvPlayerBridge> _Nullable)createPlayer __attribute__((swift_name("createPlayer()")));
+123:263:- (id<PSKHttpBridge>)http __attribute__((swift_name("http()")));
+124:264:- (id<PSKKeychainBridge>)keychain __attribute__((swift_name("keychain()")));
+125-267:- (void)pickFilesMultiple:(BOOL)multiple from:(UIViewController *)from onPicked:(void (^)(NSArray<NSString *> *))onPicked __attribute__((swift_name("pickFiles(multiple:from:onPicked:)")));
+126-270:- (void)sharePath:(NSString *)path from:(UIViewController *)from __attribute__((swift_name("share(path:from:)")));
+127:282:@interface PSKPikSeekIos : PSKBase
+128-283:+ (instancetype)alloc __attribute__((unavailable));
+129-291:+ (instancetype)allocWithZone:(struct _NSZone *)zone __attribute__((unavailable));
+130-292:+ (instancetype)pikSeekIos __attribute__((swift_name("init()")));
+131:293:@property (class, readonly, getter=shared) PSKPikSeekIos *shared __attribute__((swift_name("shared")));
+132-296:- (UIViewController *)mainViewController __attribute__((swift_name("mainViewController()")));
+133-299:- (void)recordNativeCrashKind:(NSString *)kind details:(NSString *)details __attribute__((swift_name("recordNativeCrash(kind:details:)")));
+134-304:- (UIViewController *)selfTestViewControllerSample:(NSString *)sample otherSample:(NSString *)otherSample resultPath:(NSString *)resultPath __attribute__((swift_name("selfTestViewController(sample:otherSample:resultPath:)")));
+135:307:- (void)startNative:(id<PSKNativeServices>)native __attribute__((swift_name("start(native:)")));
+136:314:- (void)startUiTestNative:(id<PSKNativeServices>)native __attribute__((swift_name("startUiTest(native:)")));

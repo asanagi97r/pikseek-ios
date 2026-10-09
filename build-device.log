@@ -1,0 +1,62 @@
+665:** BUILD SUCCEEDED **
+----- tail -----
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Release-iphoneos/PikSeek.build/Objects-normal/arm64/PikSeek.abi.json /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.swiftmodule/arm64
+
+Copy /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.swiftmodule/arm64-apple-ios.swiftdoc /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Release-iphoneos/PikSeek.build/Objects-normal/arm64/PikSeek.swiftdoc (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Release-iphoneos/PikSeek.build/Objects-normal/arm64/PikSeek.swiftdoc /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.swiftmodule/arm64
+
+Copy /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.swiftmodule/arm64-apple-ios.swiftmodule /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Release-iphoneos/PikSeek.build/Objects-normal/arm64/PikSeek.swiftmodule (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Release-iphoneos/PikSeek.build/Objects-normal/arm64/PikSeek.swiftmodule /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.swiftmodule/ar
+
+SwiftMergeGeneratedHeaders /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Release-iphoneos/PikSeek.build/DerivedSources/PikSeek-Swift.h /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Release-iphoneos/PikSeek.build/Objects-normal/arm64/PikSeek-Swift.h (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    builtin-swiftHeaderTool -arch arm64 /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Release-iphoneos/PikSeek.build/Objects-normal/arm64/PikSeek-Swift.h -o /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Release-iphoneos/PikSeek.build/DerivedSources/PikSeek-Swift.h
+
+Copy /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.swiftmodule/Project/arm64-apple-ios.swiftsourceinfo /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Release-iphoneos/PikSeek.build/Objects-normal/arm64/PikSeek.swiftsourceinfo (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Release-iphoneos/PikSeek.build/Objects-normal/arm64/PikSeek.swiftsourceinfo /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.swiftmodul
+
+Ld /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app/PikSeek normal (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios15.0 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -Os -L/Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos -L/Us
+
+CopySwiftLibs /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app/PikSeek --scan-folder /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app/Frameworks --scan-folder /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/Pi
+Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name PikSeek --sdk-root /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk --xcode-version 16F6 --platform-fam
+2026-10-09 04:47:01.485 appintentsmetadataprocessor[41329:101314] Starting appintentsmetadataprocessor export
+2026-10-09 04:47:01.497 appintentsmetadataprocessor[41329:101314] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+GenerateDSYMFile /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app.dSYM /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app/PikSeek (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/dsymutil /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app/PikSeek -o /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app.dSYM
+
+AppIntentsSSUTraining (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app/Info.plist --temp-dir-path /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Intermediates.noindex/PikSeek.build/Release-iphoneos/PikSeek.build/s
+2026-10-09 04:47:01.557 appintentsnltrainingprocessor[41352:101359] Parsing options for appintentsnltrainingprocessor
+2026-10-09 04:47:01.559 appintentsnltrainingprocessor[41352:101359] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    builtin-RegisterExecutionPolicyException /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app
+
+Validate /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    builtin-validationUtility /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app -infoplist-subpath Info.plist
+
+Touch /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app (in target 'PikSeek' from project 'PikSeek')
+    cd /Users/runner/work/pikseek-ios/pikseek-ios/iosApp
+    /usr/bin/touch -c /Users/runner/work/pikseek-ios/pikseek-ios/iosApp/build/Build/Products/Release-iphoneos/PikSeek.app
+
+note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-Owholemodule, expected -Onone (in target '_MPVKit' from project 'MPVKit')
+note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-Owholemodule, expected -Onone (in target '_FFmpeg' from project 'MPVKit')
+note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'PikSeek' from project 'PikSeek')
+** BUILD SUCCEEDED **
+

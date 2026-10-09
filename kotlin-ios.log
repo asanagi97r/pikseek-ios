@@ -1,0 +1,63 @@
+221:BUILD SUCCESSFUL in 25m 52s
+223:Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.6.1/userguide/configuration_cache_enabling.html
+----- tail -----
+> Task :ui:generateResourceAccessorsForIosArm64Main SKIPPED
+> Task :ui:convertXmlValueResourcesForIosMain NO-SOURCE
+> Task :ui:copyNonXmlValueResourcesForIosMain NO-SOURCE
+> Task :ui:prepareComposeResourcesTaskForIosMain NO-SOURCE
+> Task :ui:generateResourceAccessorsForIosMain SKIPPED
+> Task :ui:convertXmlValueResourcesForNativeMain NO-SOURCE
+> Task :ui:copyNonXmlValueResourcesForNativeMain NO-SOURCE
+> Task :ui:prepareComposeResourcesTaskForNativeMain NO-SOURCE
+> Task :ui:generateResourceAccessorsForNativeMain SKIPPED
+> Task :ui:generateActualResourceCollectorsForIosArm64Main SKIPPED
+> Task :ui:generateComposeResClass SKIPPED
+> Task :ui:generateExpectResourceCollectorsForCommonMain SKIPPED
+
+> Task :ui:compileKotlinIosArm64
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/PikoMainScaffold.kt:470:44 Unnecessary safe call on a non-null receiver of type 'VideoPlayerHost.Detached'.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/PikoMainScaffold.kt:747:13 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/PikoMainScaffold.kt:778:13 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/PikoMainScaffold.kt:939:13 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/WorkNotices.kt:140:52 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/adaptive/WindowWidth.kt:22:21 'fun currentWindowAdaptiveInfo(supportLargeAndXLargeWidth: Boolean = ...): WindowAdaptiveInfo' is deprecated. Please use V2 version of this function to support L and XL width size classes.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/components/FileDrag.kt:339:97 'val Icons.Outlined.DriveFileMove: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.DriveFileMove.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/components/MoveTargetDialog.kt:304:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/components/PikoSheet.kt:81:79 'val windowInsets: WindowInsets' is deprecated. Renamed as modalWindowInsets.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/components/PikoSheet.kt:96:22 'fun rememberModalBottomSheetState(skipPartiallyExpanded: Boolean = ..., confirmValueChange: (SheetValue) -> Boolean = ...): SheetState' is deprecated. Use rememberBottomSheetState with Hidden initial value.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/components/SidePanelHost.kt:72:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/drive/DriveScreen.kt:385:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/drive/DriveScreen.kt:386:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/drive/DriveScreen.kt:387:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/drive/DriveScreen.kt:483:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/drive/DriveScreen.kt:617:40 'val Icons.Outlined.DriveFileMove: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.DriveFileMove.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/drive/DriveScreen.kt:813:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/drive/DriveScreen.kt:819:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/drive/DriveScreen.kt:822:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/drive/DriveScreen.kt:1174:52 'val Icons.Outlined.DriveFileMove: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.DriveFileMove.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/drive/DriveTopBars.kt:128:66 'val Icons.Outlined.DriveFileMove: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.DriveFileMove.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/drive/FileActionsSheet.kt:241:36 'val Icons.Outlined.DriveFileMove: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.DriveFileMove.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/instant/InstantBatchSection.kt:232:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/player/PlayerControlsOverlay.kt:533:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/player/PlayerSheets.kt:130:26 'fun rememberModalBottomSheetState(skipPartiallyExpanded: Boolean = ..., confirmValueChange: (SheetValue) -> Boolean = ...): SheetState' is deprecated. Use rememberBottomSheetState with Hidden initial value.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/player/PlayerSheets.kt:165:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/player/PlayerSubtitlePicker.kt:49:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/share/MySharesScreen.kt:158:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/piko/ui/screens/transfers/TransfersScreen.kt:415:5 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+w: file:///Users/runner/work/pikseek-ios/pikseek-ios/ui/src/commonMain/kotlin/dev/pikseek/ui/auth/SignInScreen.kt:99:27 'fun BackHandler(enabled: Boolean = ..., onBack: () -> Unit): Unit' is deprecated. Use NavigationEventHandler instead.
+
+> Task :ui:exportCrossCompilationMetadataForIosArm64ApiElements
+> Task :iosKit:compileKotlinIosArm64
+> Task :iosKit:linkReleaseFrameworkIosArm64
+
+[Incubating] Problems report is available at: file:///Users/runner/work/pikseek-ios/pikseek-ios/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.6.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 25m 52s
+27 actionable tasks: 27 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.6.1/userguide/configuration_cache_enabling.html
