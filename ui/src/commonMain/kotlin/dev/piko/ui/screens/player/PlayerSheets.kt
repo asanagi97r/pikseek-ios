@@ -1,5 +1,6 @@
 package dev.piko.ui.screens.player
 
+import dev.pikseek.ui.sort.PlaylistSortRow
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -235,6 +236,8 @@ internal fun EpisodePanel(
     val shown = remember(entries, selected) { entries.filter { it.sectionKey == selected } }
 
     Column(modifier) {
+        // PikSeek：选集的排序，与网盘里这个文件夹的排序是同一份记忆
+        PlaylistSortRow(Modifier.padding(start = 4.dp, end = 16.dp))
         if (sections.size > 1) {
             val sectionScroll = rememberScrollState()
             Row(

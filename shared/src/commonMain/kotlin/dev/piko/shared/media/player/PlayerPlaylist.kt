@@ -1,6 +1,7 @@
 package dev.piko.shared.media.player
 
 import dev.piko.data.repository.NaturalOrder
+import dev.piko.shared.data.PikoFileSortOrder
 import dev.piko.shared.naming.AttachmentKind
 import dev.piko.shared.naming.EntryFile
 import dev.piko.shared.naming.FileKind
@@ -36,7 +37,33 @@ data class PlaylistEntry(
     val primary: Boolean = true,
     /** 解析器挂在这个视频下的外挂字幕文件，播放时一并加载。 */
     val subtitles: List<SubtitleRef> = emptyList(),
+    /** PikSeek：网盘上的创建时间（ISO 8601，按字符串比较即按时间），按时间排选集用。 */
+    val createdTime: String = "",
 )
+
+/**
+ * PikSeek：按 [order] 重排播放列表，与网盘里同一个文件夹的排序一致。
+ * 分区的先后不动，正片照样在前；分区里按组排，同组的几个版本跟着一起走。
+ * 按名称升序就是 [buildPlaylist] 排好的集数顺序（解析关着时是文件名的自然顺序），降序把它倒过来；
+ * 时间与大小看每组里体积最大的那个版本。
+ */
+fun sortPlaylist(entries: List<PlaylistEntry>, order: PikoFileSortOrder): List<PlaylistEntry> {
+    if (order == PikoFileSortOrder.NAME_ASC || entries.size < 2) return entries
+    val sections = entries.groupBy { it.sectionKey }
+    return sections.values.flatMap { section ->
+        val groups = section.groupBy { it.groupKey }.values.toList()
+        fun head(group: List<PlaylistEntry>) = group.firstOrNull { it.primary } ?: group.first()
+        val sorted = when (order) {
+            PikoFileSortOrder.NAME_ASC -> groups
+            PikoFileSortOrder.NAME_DESC -> groups.reversed()
+            PikoFileSortOrder.TIME_DESC -> groups.sortedByDescending { head(it).createdTime }
+            PikoFileSortOrder.TIME_ASC -> groups.sortedBy { head(it).createdTime }
+            PikoFileSortOrder.SIZE_DESC -> groups.sortedByDescending { head(it).size }
+            PikoFileSortOrder.SIZE_ASC -> groups.sortedBy { head(it).size }
+        }
+        sorted.flatten()
+    }
+}
 
 /** 网盘里的一个字幕文件。[language] 是解析器从文件名读出的语言（「简」「繁日」），读不出时为 null。 */
 data class SubtitleRef(val fileId: String, val name: String, val language: String?)

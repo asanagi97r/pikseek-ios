@@ -82,6 +82,56 @@ class AppSettings(private val store: SettingsStore) {
     private val _playOrder = MutableStateFlow(enumOf("player.order", PlayOrder.Sequential))
     val playOrder: StateFlow<PlayOrder> = _playOrder.asStateFlow()
 
+    /** 文件列表的默认排序（PikoFileSortOrder 的名字）。没单独记过排序的文件夹、关了记忆时所有文件夹，都按它排。 */
+    private val _defaultSort = MutableStateFlow(read("sort.default", "TIME_DESC"))
+    val defaultSort: StateFlow<String> = _defaultSort.asStateFlow()
+
+    /** 在某个文件夹里改了排序，记住它，下次进来还是这样排。 */
+    private val _rememberSort = MutableStateFlow(read("sort.remember", "true").toBoolean())
+    val rememberSort: StateFlow<Boolean> = _rememberSort.asStateFlow()
+
+    // 各文件夹记住的排序：文件夹 ID → 排序名。最近改的排在后面，超过上限先丢最久没改的
+    private val folderSorts = LinkedHashMap(decodeFolderSorts(read("sort.folders", "")))
+
+    /** 默认排序改了、记忆开关拨了时加一。开着的文件列表看它把眼前的文件夹重新排。 */
+    private val _sortVersion = MutableStateFlow(0)
+    val sortVersion: StateFlow<Int> = _sortVersion.asStateFlow()
+
+    /** 这个文件夹该怎么排：记住过的（记忆开着时），否则默认排序。根目录的 ID 是空串。 */
+    fun sortFor(folderId: String): String {
+        val remembered = if (_rememberSort.value) synchronized(lock) { folderSorts[folderKey(folderId)] } else null
+        return remembered ?: _defaultSort.value
+    }
+
+    /** 用户在这个文件夹里改了排序。记忆关着时不记，只管这一眼。 */
+    fun setFolderSort(folderId: String, order: String) {
+        if (!_rememberSort.value) return
+        val encoded = synchronized(lock) {
+            val key = folderKey(folderId)
+            folderSorts.remove(key)
+            // 改成和默认一样就不必记：以后改了默认，它跟着走
+            if (order != _defaultSort.value) folderSorts[key] = order
+            while (folderSorts.size > MAX_FOLDER_SORTS) folderSorts.remove(folderSorts.keys.first())
+            encodeFolderSorts(folderSorts)
+        }
+        write("sort.folders", encoded) {}
+    }
+
+    /** 设默认排序：同时清掉各文件夹记住的，全部按新的默认排，之后单个文件夹再改的再记。 */
+    fun setDefaultSort(order: String) {
+        synchronized(lock) { folderSorts.clear() }
+        write("sort.folders", "") {}
+        write("sort.default", order) {
+            _defaultSort.value = order
+            _sortVersion.value++
+        }
+    }
+
+    fun setRememberSort(enabled: Boolean) = write("sort.remember", enabled.toString()) {
+        _rememberSort.value = enabled
+        _sortVersion.value++
+    }
+
     fun setContinuousPlay(enabled: Boolean) = write("player.continuous", enabled.toString()) { _continuousPlay.value = enabled }
 
     fun setPlayOrder(order: PlayOrder) = write("player.order", order.name) { _playOrder.value = order }
@@ -104,6 +154,14 @@ class AppSettings(private val store: SettingsStore) {
 
     private fun read(key: String, default: String): String = values[key] ?: default
 
+    private fun folderKey(folderId: String) = folderId.ifEmpty { ROOT_KEY }
+
+    // 存成一行「ID=排序|ID=排序」：网盘的文件夹 ID 与库的 ID（piko:starred）里都没有 = 与 |
+    private fun encodeFolderSorts(map: Map<String, String>): String = map.entries.joinToString("|") { "${it.key}=${it.value}" }
+
+    private fun decodeFolderSorts(text: String): Map<String, String> =
+        text.split('|').mapNotNull { pair -> pair.split('=').takeIf { it.size == 2 && it[0].isNotEmpty() && it[1].isNotEmpty() }?.let { it[0] to it[1] } }.toMap()
+
     private inline fun <reified T : Enum<T>> enumOf(key: String, default: T): T =
         enumValues<T>().firstOrNull { it.name == values[key] } ?: default
 
@@ -120,5 +178,10 @@ class AppSettings(private val store: SettingsStore) {
 
         /** 设置页给的几档上限，0 是不限。 */
         val CACHE_LIMIT_CHOICES: List<Long> = listOf(2 * GIB, 5 * GIB, 10 * GIB, 0L)
+
+        /** 最多记住这么多个文件夹的排序，一行几十 KB。 */
+        const val MAX_FOLDER_SORTS = 2000
+
+        private const val ROOT_KEY = "~root"
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Theaters
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Theaters
 import dev.pikseek.ui.settings.PreviewSettingsRows
+import dev.pikseek.ui.settings.SortSettingsRows
 import dev.pikseek.ui.settings.SecuritySettingsContent
 import dev.piko.shared.sync.PikoSettingsSync
 import androidx.compose.material.icons.outlined.Sync
@@ -394,6 +395,10 @@ fun SettingsScreen(
                             onClick = { showArchivePasswords = true },
                             trailingIcon = null,
                         )
+                    }
+                    // PikSeek：默认排序与记住每个文件夹的排序
+                    SettingsGroup("排序") {
+                        SortSettingsRows(snackbarHostState)
                     }
                     }
 

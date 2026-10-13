@@ -76,6 +76,8 @@ import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.outlined.Preview
 import dev.pikseek.ui.LocalPreviewPacks
 import dev.pikseek.ui.rating.LocalFileRatings
+import dev.pikseek.ui.sort.LocalSortMemory
+import dev.piko.shared.data.PikoFileSortOrder
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.HeartBroken
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -280,7 +282,20 @@ fun DriveScreen(
     val sessionManager = LocalPikoServices.current.preferences
     val isSpoilerBlurEnabled by sessionManager.spoilerBlurFlow.collectAsStateWithLifecycle(initialValue = true)
 
-    val state = remember { DriveScreenState(driveRepo, sessionManager, scope) }
+    // PikSeek：各文件夹的排序（默认排序 + 单个文件夹记住的），见 FolderSorts
+    val sortMemory = LocalSortMemory.current
+    val state = remember {
+        val startFolder = driveRepo.folderStackFlow.value.lastOrNull()?.id.orEmpty()
+        DriveScreenState(
+            driveRepo,
+            sessionManager,
+            scope,
+            initialSortOrder = sortMemory?.orderFor(startFolder) ?: PikoFileSortOrder.TIME_DESC,
+            sortMemory = sortMemory,
+        )
+    }
+    // 设置里改了默认排序或记忆开关：眼前的文件夹按新的规矩重排
+    LaunchedEffect(sortMemory) { sortMemory?.versions?.drop(1)?.collect { state.reapplySortMemory() } }
 
     LaunchedEffect(state) {
         state.messages.collect { snackbarHostState.showSnackbar(it, withDismissAction = true) }

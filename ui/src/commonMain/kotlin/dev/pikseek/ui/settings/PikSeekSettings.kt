@@ -50,6 +50,11 @@ import dev.pikseek.platform.AppSettings
 import dev.pikseek.platform.DragSeekMode
 import dev.pikseek.platform.ThumbnailDensity
 import dev.pikseek.ui.LocalPikSeek
+import dev.pikseek.ui.sort.FolderSorts
+import dev.pikseek.ui.sort.describe
+import dev.piko.shared.data.PikoFileSortOrder
+import androidx.compose.material.icons.automirrored.outlined.Sort
+import androidx.compose.material.icons.outlined.Bookmarks
 import kotlinx.coroutines.launch
 
 /**
@@ -259,4 +264,47 @@ internal fun <T> ChoiceDialog(
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("关闭") } },
     )
+}
+
+/**
+ * 设置里「网盘」一节的「排序」：默认排序与「记住每个文件夹的排序」。每台设备各自的。
+ * 设默认排序会清掉各文件夹记住的，全部回到新的默认，之后在单个文件夹里改了再记。
+ */
+@Composable
+fun SortSettingsRows(snackbarHostState: SnackbarHostState) {
+    val settings = LocalPikSeek.current.settings
+    val scope = rememberCoroutineScope()
+    val defaultName by settings.defaultSort.collectAsState()
+    val remembering by settings.rememberSort.collectAsState()
+    val defaultOrder = FolderSorts.parse(defaultName)
+    var choosing by remember { mutableStateOf(false) }
+
+    SettingsNavigationRow(
+        index = 0, count = 2,
+        icon = Icons.AutoMirrored.Outlined.Sort,
+        title = "默认排序",
+        supporting = "${defaultOrder.describe()}。重新选一次会清掉各文件夹单独记住的排序",
+        onClick = { choosing = true },
+        trailingIcon = null,
+    )
+    SettingsSwitchRow(
+        index = 1, count = 2,
+        icon = Icons.Outlined.Bookmarks,
+        title = "记住每个文件夹的排序",
+        supporting = "在某个文件夹里改了排序，下次进来还是那样排；播放器的选集也跟着这个文件夹排。关着时都按默认排序",
+        checked = remembering,
+        onCheckedChange = settings::setRememberSort,
+    )
+    if (choosing) {
+        ChoiceDialog(
+            title = "默认排序",
+            options = PikoFileSortOrder.entries.map { Choice(it, it.describe(), null) },
+            selected = defaultOrder,
+            onSelect = { order ->
+                settings.setDefaultSort(order.name)
+                scope.launch { snackbarHostState.showSnackbar("默认排序改为${order.describe()}，各文件夹记住的排序已清除", withDismissAction = true) }
+            },
+            onDismiss = { choosing = false },
+        )
+    }
 }

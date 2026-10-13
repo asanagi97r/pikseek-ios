@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import dev.pikseek.ui.rating.FileRatings
+import dev.pikseek.ui.sort.FolderSorts
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -81,6 +82,9 @@ class PreviewRuntime(
         setStarred = services.driveRepository::setStarred,
         accounts = services.clientManager.currentClient.map { it?.account },
     )
+
+    /** 各文件夹的排序，网盘页与播放器的选集共用，经 LocalSortMemory 取用。 */
+    val folderSorts = FolderSorts(settings)
 
     // 这次运行里读过、改过的分段：gcid → 最新的一份。改分段与后台做完的分点都先落到这里，再传到网盘
     private val marksLock = Mutex()

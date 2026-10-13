@@ -40,6 +40,7 @@ import java.io.File
 import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -161,6 +162,32 @@ class PikSeekScreensTest {
         onNodeWithText("原项目 Piko").performScrollTo()
         waitForIdle()
         save("settings-about.png")
+    }
+
+    @Test
+    fun `settings let you pick the default sort and turn folder memory off`() = runComposeUiTest {
+        appSettings.setFolderSort("folder-a", "SIZE_ASC")
+        setContent { Shell { SettingsScreen(onBackClick = null, showAbout = true) } }
+        waitForIdle()
+        onNodeWithText("默认排序").performScrollTo()
+        waitForIdle()
+        onNodeWithText("创建时间 · 新的在前", substring = true).assertExists()
+        save("settings-sort.png")
+
+        // 先拨开关：选了默认排序之后底部会弹提示，正好盖住这一行
+        onNodeWithText("记住每个文件夹的排序").performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(false, appSettings.rememberSort.value)
+        assertEquals("TIME_DESC", appSettings.sortFor("folder-a"), "关了记忆就按默认")
+        onNodeWithText("记住每个文件夹的排序").performClick()
+        waitForIdle()
+
+        onNodeWithText("默认排序").performClick()
+        waitForIdle()
+        onNodeWithText("名称 · 正序（第 1 集在前）").performClick()
+        waitForIdle()
+        assertEquals("NAME_ASC", appSettings.defaultSort.value)
+        assertEquals("NAME_ASC", appSettings.sortFor("folder-a"), "重设默认清掉了文件夹记住的")
     }
 
     private fun ComposeUiTest.save(name: String) {

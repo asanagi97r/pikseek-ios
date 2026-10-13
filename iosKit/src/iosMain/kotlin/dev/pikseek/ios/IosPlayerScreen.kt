@@ -38,6 +38,10 @@ import dev.pikseek.performance.PerformanceMetrics
 import dev.pikseek.ui.PreviewRuntime
 import dev.pikseek.ui.player.LocalTimelinePreview
 import dev.pikseek.ui.player.LocalPlaybackSettings
+import dev.pikseek.ui.sort.LocalPlaylistSort
+import dev.pikseek.ui.sort.PlaylistSort
+import dev.piko.shared.media.player.PlaylistEntry
+import dev.piko.shared.media.player.sortPlaylist
 import dev.pikseek.ui.player.PerformanceOverlay
 import dev.pikseek.ui.player.TimelinePreview
 import io.github.nihildigit.pikpak.FileStat
@@ -98,10 +102,24 @@ internal fun IosPlayerScreen(
     val isSpoilerBlurEnabled by services.preferences.spoilerBlurFlow.collectAsState(initial = true)
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var basePlaylist by remember(request) { mutableStateOf<List<PlaylistEntry>?>(null) }
     LaunchedEffect(request) {
         val siblings = services.driveRepository.siblingMedia(request.fileId)
         siblingVideos = siblings.videos
-        state.playlist = playlistOf(siblingVideos, services.preferences, siblings.subtitles)
+        basePlaylist = playlistOf(siblingVideos, services.preferences, siblings.subtitles)
+    }
+
+    // PikSeek：选集按视频所在文件夹的排序排，与网盘里那个文件夹是同一份记忆；在选集面板里改了记回去
+    val playlistSort = remember(request) { PlaylistSort() }
+    val playlistFolder = siblingVideos.firstOrNull()?.parentId
+    LaunchedEffect(playlistFolder) { playlistFolder?.let { playlistSort.order = preview.folderSorts.orderFor(it) } }
+    playlistSort.onChange = { order ->
+        playlistFolder?.let { preview.folderSorts.remember(it, order) }
+        playlistSort.order = order
+    }
+    LaunchedEffect(basePlaylist, playlistSort.order) {
+        val base = basePlaylist ?: return@LaunchedEffect
+        state.playlist = playlistSort.order?.let { sortPlaylist(base, it) } ?: base
     }
 
     // 同目录元数据到了之后再验一次磁盘，下好的片子从当前位置换到本地文件
@@ -231,7 +249,11 @@ internal fun IosPlayerScreen(
         } else {
             IosPlayerSurface(player, Modifier.fillMaxSize())
 
-            CompositionLocalProvider(LocalTimelinePreview provides timelinePreview, LocalPlaybackSettings provides appSettings) {
+            CompositionLocalProvider(
+                LocalTimelinePreview provides timelinePreview,
+                LocalPlaybackSettings provides appSettings,
+                LocalPlaylistSort provides playlistSort,
+            ) {
                 MobilePlayerControls(
                     title = state.title,
                     isLocalPlayback = state.isLocalPlayback,

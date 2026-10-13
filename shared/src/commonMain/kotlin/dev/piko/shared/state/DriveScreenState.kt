@@ -97,6 +97,8 @@ class DriveScreenState(
     private val preferences: PikoUserPreferences,
     private val scope: CoroutineScope,
     initialSortOrder: PikoFileSortOrder = PikoFileSortOrder.TIME_DESC,
+    /** PikSeek：记住各文件夹的排序；为 null 时排序只跟这一份状态走，换文件夹也不变（Piko 原来的样子）。 */
+    private val sortMemory: SortMemory? = null,
 ) {
     var files by mutableStateOf<List<FileStat>>(emptyList())
         private set
@@ -656,6 +658,15 @@ class DriveScreenState(
     fun changeSortOrder(order: PikoFileSortOrder) {
         if (order == sortOrder) return
         sortOrder = order
+        sortMemory?.remember(activeFolderId, order)
+        load()
+    }
+
+    /** PikSeek：默认排序或记忆开关改了，眼前的文件夹按新的规矩重排。 */
+    fun reapplySortMemory() {
+        val order = sortMemory?.orderFor(activeFolderId) ?: return
+        if (order == sortOrder) return
+        sortOrder = order
         load()
     }
 
@@ -749,6 +760,8 @@ class DriveScreenState(
 
     /** 换了目录：搜索态、选中态、防窥揭示都不该跨目录留存。 */
     private fun onFolderChanged() {
+        // PikSeek：进哪个文件夹就按它记住的（或默认的）排序排，赶在加载之前
+        sortMemory?.let { sortOrder = it.orderFor(activeFolderId) }
         typeFilter = null
         ratingFilter = null
         searchQuery = ""

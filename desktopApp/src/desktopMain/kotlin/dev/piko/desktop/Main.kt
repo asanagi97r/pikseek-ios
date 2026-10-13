@@ -51,6 +51,7 @@ import dev.pikseek.desktop.PikSeekRuntime
 import dev.pikseek.ui.LocalPikSeek
 import dev.pikseek.ui.LocalPreviewPacks
 import dev.pikseek.ui.rating.LocalFileRatings
+import dev.pikseek.ui.sort.LocalSortMemory
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
@@ -280,6 +281,7 @@ fun main(args: Array<String>) {
                 LocalPikSeek provides pikSeek.environment,
                 LocalPreviewPacks provides pikSeek.environment.previewPacks,
                 LocalFileRatings provides pikSeek.ratings,
+                LocalSortMemory provides pikSeek.folderSorts,
             ) {
                 PikoTheme(appearance = appearance) {
                     // 有侧边栏时与侧边栏、网盘页页眉同为外框色；没有时与网盘页的顶栏同为页面本色。

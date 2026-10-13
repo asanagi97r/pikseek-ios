@@ -43,7 +43,7 @@ suspend fun playlistOf(
 ): List<PlaylistEntry> {
     val parse = preferences.nameParsingFlow.first()
     val entries = videos.map {
-        PlaylistEntry(fileId = it.id, name = it.name, label = "", thumbnailUrl = it.thumbnailLink, size = it.sizeBytes)
+        PlaylistEntry(fileId = it.id, name = it.name, label = "", thumbnailUrl = it.thumbnailLink, size = it.sizeBytes, createdTime = it.createdTime)
     }
     val subtitleRefs = subtitles.map { SubtitleRef(fileId = it.id, name = it.name, language = null) }
     return withContext(Dispatchers.Default) { if (parse) buildPlaylist(entries, subtitleRefs) else buildRawPlaylist(entries) }

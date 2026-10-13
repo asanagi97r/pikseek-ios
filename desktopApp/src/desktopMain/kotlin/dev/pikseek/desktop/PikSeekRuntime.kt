@@ -40,6 +40,9 @@ class PikSeekRuntime(val settings: AppSettings, services: PikoServices) {
     /** 见 [PreviewRuntime.ratings]。 */
     val ratings get() = runtime.ratings
 
+    /** 见 [PreviewRuntime.folderSorts]。 */
+    val folderSorts get() = runtime.folderSorts
+
     val canGenerate: Boolean get() = mpvDirectory != null
 
     /** 见 [PreviewRuntime.openSession]。 */
