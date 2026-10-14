@@ -20,6 +20,8 @@ targets:
     platform: iOS
     sources:
       - path: Sources
+      # 程序图标：docs/make_icon.py ios 画出来的 1024 px 一张，其余尺寸由 Xcode 生成
+      - path: Resources/Assets.xcassets
       # 自检用的样片：一个系统播放器能播的（MP4），一个不能播的（WMV）
       - path: ../testdata/media/control-mpeg4-aac.mp4
         buildPhase: resources
@@ -36,6 +38,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: dev.pikseek.ios
         PRODUCT_NAME: PikSeek
         MARKETING_VERSION: "1.2.3"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CURRENT_PROJECT_VERSION: "1"
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: "5.0"

@@ -1,16 +1,21 @@
 """按 docs/icon.svg 的同一组坐标画出程序图标，只用 Python 标准库。
 
-    python docs/make_icon.py
+    python docs/make_icon.py        桌面的几个图标
+    python docs/make_icon.py ios    只写 iOS 的
 
-写出两个文件（路径相对仓库根目录）：
+写出这些文件（路径相对仓库根目录）：
     desktopApp/package/windows/icon.ico                 exe 与任务栏图标，256/128/64/48/32/16
     desktopApp/src/desktopMain/resources/app-icon.png   窗口图标，256 px
+    iosApp/Resources/Assets.xcassets/AppIcon.appiconset iOS 的程序图标，1024 px 一张，其余尺寸由 Xcode 生成。
+                                                        满幅正方形、不透明：圆角由系统裁，透明处在 iOS 上会变黑
 
 图形改了要三处一起改：docs/icon.svg、ui 模块的 PikoBrandIcons、这里。
 """
 
+import json
 import math
 import struct
+import sys
 import zlib
 from pathlib import Path
 
@@ -53,9 +58,9 @@ PLAY = [(21.6, 13.4), (27.8, 17.0), (21.6, 20.6)]
 TAIL = [(21.0, 25.6), (27.0, 25.6), (24.0, 29.2)]
 
 
-def sample(x, y):
-    """48x48 坐标系里一个点的颜色：(r, g, b, a)，a 为 0 或 1。"""
-    if rounded_rect(x, y, 24, 24, 24, 24, 12) > 0:
+def sample(x, y, square=False):
+    """48x48 坐标系里一个点的颜色：(r, g, b, a)，a 为 0 或 1。[square] 时底色铺满整个正方形（iOS）。"""
+    if not square and rounded_rect(x, y, 24, 24, 24, 24, 12) > 0:
         return (0, 0, 0, 0.0)
     white = 0.0
     if segment(x, y, 9, 35.5, 39, 35.5) <= 1.4:
@@ -72,18 +77,18 @@ def sample(x, y):
     return (r, g, b, 1.0)
 
 
-def render(size):
+def render(size, square=False, supersample=SUPERSAMPLE):
     """size x size 的 RGBA 行列表，预乘之前的直通 alpha。"""
     scale = 48.0 / size
-    step = 1.0 / SUPERSAMPLE
+    step = 1.0 / supersample
     rows = []
     for py in range(size):
         row = bytearray()
         for px in range(size):
             total = [0.0, 0.0, 0.0, 0.0]
-            for sy in range(SUPERSAMPLE):
-                for sx in range(SUPERSAMPLE):
-                    r, g, b, a = sample((px + (sx + 0.5) * step) * scale, (py + (sy + 0.5) * step) * scale)
+            for sy in range(supersample):
+                for sx in range(supersample):
+                    r, g, b, a = sample((px + (sx + 0.5) * step) * scale, (py + (sy + 0.5) * step) * scale, square)
                     total[0] += r * a
                     total[1] += g * a
                     total[2] += b * a
@@ -91,21 +96,24 @@ def render(size):
             if total[3] == 0:
                 row += b"\x00\x00\x00\x00"
             else:
-                alpha = total[3] / (SUPERSAMPLE * SUPERSAMPLE)
+                alpha = total[3] / (supersample * supersample)
                 row += bytes((round(total[0] / total[3]), round(total[1] / total[3]), round(total[2] / total[3]), round(alpha * 255)))
         rows.append(bytes(row))
     return rows
 
 
-def png(rows, size):
+def png(rows, size, opaque=False):
+    """[opaque] 时去掉 alpha 写成 RGB：iOS 的程序图标不许带透明通道。"""
     def chunk(kind, data):
         body = kind + data
         return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body))
 
+    if opaque:
+        rows = [bytes(b for i, b in enumerate(row) if i % 4 != 3) for row in rows]
     raw = b"".join(b"\x00" + row for row in rows)
     return (
         b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0))
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 2 if opaque else 6, 0, 0, 0))
         + chunk(b"IDAT", zlib.compress(raw, 9))
         + chunk(b"IEND", b"")
     )
@@ -133,7 +141,25 @@ def ico(images):
     return out + b"".join(data for _, data in images)
 
 
+def ios():
+    # 1024 px 每像素 2x2 采样已经够平滑，4x4 用纯 Python 要算好几分钟
+    folder = ROOT / "iosApp/Resources/Assets.xcassets"
+    icon = folder / "AppIcon.appiconset"
+    icon.mkdir(parents=True, exist_ok=True)
+    (icon / "AppIcon-1024.png").write_bytes(png(render(1024, square=True, supersample=2), 1024, opaque=True))
+    info = {"author": "xcode", "version": 1}
+    (icon / "Contents.json").write_bytes((json.dumps({
+        "images": [{"filename": "AppIcon-1024.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"}],
+        "info": info,
+    }, indent=2) + "\n").encode("utf-8"))
+    (folder / "Contents.json").write_bytes((json.dumps({"info": info}, indent=2) + "\n").encode("utf-8"))
+    print("iOS AppIcon written")
+
+
 def main():
+    if sys.argv[1:] == ["ios"]:
+        ios()
+        return
     rendered = {size: render(size) for size in (256, 128, 64, 48, 32, 16)}
     images = [(256, png(rendered[256], 256))] + [(size, dib(rendered[size], size)) for size in (128, 64, 48, 32, 16)]
     (ROOT / "desktopApp/package/windows/icon.ico").write_bytes(ico(images))
